@@ -37,6 +37,13 @@ def _get_str(name: str, default: str) -> str:
     return raw if raw not in (None, "") else default
 
 
+def _get_bool(name: str, default: bool) -> bool:
+    raw = os.getenv(name)
+    if raw in (None, ""):
+        return default
+    return raw.strip().lower() in ("1", "true", "yes", "on")
+
+
 @dataclass(frozen=True)
 class Settings:
     """Parámetros de dominio y conexión. Inmutable una vez cargado."""
@@ -51,6 +58,10 @@ class Settings:
     jwt_secret: str = ""
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 10080  # 7 días
+    cookie_name: str = "access_token"      # cookie httpOnly que transporta el JWT
+    cookie_secure: bool = False            # True en producción (HTTPS)
+    cookie_samesite: str = "lax"           # lax en dev; revisar para cross-site en prod
+    frontend_origin: str = "http://localhost:3000"  # origen de la PWA Next.js (CORS)
 
     # --- Parámetros de dominio (reglas no negociables) ---
     min_odds: float = 1.40       # cuota decimal mínima de los pronósticos
@@ -72,6 +83,10 @@ class Settings:
             jwt_secret=_get_str("JWT_SECRET", ""),
             jwt_algorithm=_get_str("JWT_ALGORITHM", "HS256"),
             jwt_expire_minutes=_get_int("JWT_EXPIRE_MINUTES", 10080),
+            cookie_name=_get_str("COOKIE_NAME", "access_token"),
+            cookie_secure=_get_bool("COOKIE_SECURE", False),
+            cookie_samesite=_get_str("COOKIE_SAMESITE", "lax"),
+            frontend_origin=_get_str("FRONTEND_ORIGIN", "http://localhost:3000"),
             min_odds=_get_float("MIN_ODDS", 1.40),
             kelly_fraction=_get_float("KELLY_FRACTION", 0.25),
             max_stake_pct=_get_float("MAX_STAKE_PCT", 0.05),

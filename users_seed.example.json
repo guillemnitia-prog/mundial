@@ -1,0 +1,9 @@
+[
+  {"username": "admin",  "password": "CAMBIA_ESTA_CONTRASEÑA", "role": "admin"},
+  {"username": "amigo1", "password": "CAMBIA_ESTA_CONTRASEÑA", "role": "member"},
+  {"username": "amigo2", "password": "CAMBIA_ESTA_CONTRASEÑA", "role": "member"},
+  {"username": "amigo3", "password": "CAMBIA_ESTA_CONTRASEÑA", "role": "member"},
+  {"username": "amigo4", "password": "CAMBIA_ESTA_CONTRASEÑA", "role": "member"},
+  {"username": "amigo5", "password": "CAMBIA_ESTA_CONTRASEÑA", "role": "member"},
+  {"username": "amigo6", "password": "CAMBIA_ESTA_CONTRASEÑA", "role": "member"}
+]

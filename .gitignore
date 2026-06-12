@@ -3,6 +3,7 @@
 *.env
 !.env.example
 users_seed.*
+!users_seed.example.json
 *secret*
 *.key
 
