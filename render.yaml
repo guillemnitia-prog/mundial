@@ -1,0 +1,60 @@
+# Blueprint de Render para el backend (API + scheduler). El frontend va en Vercel (ver DEPLOY.md).
+# Nota: disco persistente y cron requieren plan de pago en Render; en free puedes empezar sin cron
+# y disparar el refresco a mano.
+services:
+  - type: web
+    name: mundial-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter
+    healthCheckPath: /health
+    disk:
+      name: data
+      mountPath: /app/data
+      sizeGB: 1
+    envVars:
+      - key: DATABASE_URL
+        value: sqlite:////app/data/worldcup.db
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: COOKIE_SAMESITE
+        value: none
+      - key: FRONTEND_ORIGIN
+        sync: false   # https://<tu-app>.vercel.app
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FOOTBALL_DATA_TOKEN
+        sync: false
+      - key: ODDS_API_KEY
+        sync: false
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: VAPID_SUBJECT
+        sync: false
+
+  # Pasada diaria (refresco + análisis + liquidación + push). Requiere plan con cron.
+  - type: cron
+    name: mundial-daily
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    schedule: "0 8 * * *"
+    dockerCommand: python -m src.scheduler.daily_refresh
+    disk:
+      name: data
+      mountPath: /app/data
+      sizeGB: 1
+    envVars:
+      - key: DATABASE_URL
+        value: sqlite:////app/data/worldcup.db
+      - key: FOOTBALL_DATA_TOKEN
+        sync: false
+      - key: ODDS_API_KEY
+        sync: false
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: VAPID_SUBJECT
+        sync: false

@@ -26,7 +26,8 @@ cp .env.example .env   # y rellena tokens y JWT_SECRET (openssl rand -hex 32)
 - `pytest` → tests
 
 ## Estado
-Fase 1 (scaffolding) completada. Siguientes fases en `SPEC.md` §9.
+App completa (modelo, value betting, saldos, decisión/deshacer, chat, PWA, scheduler, push).
+Frontend en `frontend/` (Next.js PWA). Para publicarla, ver **DEPLOY.md** (Render + Vercel).
 
 ## ⚠️ Juego responsable
 Solo +18. Apostar conlleva **riesgo real de pérdida**; batir al mercado a largo plazo es muy
