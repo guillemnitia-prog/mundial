@@ -1,8 +1,11 @@
-"""Dimensionamiento del stake: ¼ Kelly sobre el saldo individual (SPEC §5.1).
+"""Dimensionamiento del stake por usuario (SPEC §5.1).
 
-La FRACCIÓN recomendada (¼ Kelly con tope 5%) es independiente del usuario y se guarda en
-`predictions.recommended_stake`. El importe en € es POR USUARIO sobre su saldo actual, con halving
-si el saldo cayó >50% y con el mínimo de la casa ("demasiado pequeña, no apostar").
+Política (decidida por el usuario): cada apuesta = **max(20% del saldo, 10 €)**, con tope **25%**
+del saldo. Si el saldo < 10 € no se recomienda apostar (importe demasiado pequeño). El stake es
+POR USUARIO sobre su saldo ACTUAL: una misma recomendación da importes distintos a cada uno.
+
+`predictions.recommended_stake` guarda la fracción nominal (MIN_STAKE_PCT = 0.20), user-independent;
+el importe en € lo calcula `user_stake(balance)` aplicando suelo de 10 € y tope del 25%.
 """
 
 from __future__ import annotations
@@ -10,11 +13,9 @@ from __future__ import annotations
 from src.config import settings
 from src.db.schema import Prediction
 
-INITIAL_BALANCE = 50.0  # saldo virtual de partida por usuario
-
 
 def kelly_fraction(p: float, odds: float) -> float:
-    """Fracción de Kelly completa: f = ((odds−1)·p − (1−p)) / (odds−1). 0 si no hay edge."""
+    """Fracción de Kelly completa (informativa): f = ((odds−1)·p − (1−p)) / (odds−1). 0 si no hay edge."""
     b = odds - 1.0
     if b <= 0:
         return 0.0
@@ -23,47 +24,39 @@ def kelly_fraction(p: float, odds: float) -> float:
 
 
 def recommended_fraction(p: float, odds: float) -> float:
-    """¼ Kelly con tope MAX_STAKE_PCT (user-independent). 0 si no hay edge."""
-    f = kelly_fraction(p, odds) * settings.kelly_fraction
-    return min(f, settings.max_stake_pct)
+    """Fracción nominal recomendada (user-independent): el suelo de política (20%).
 
-
-def user_stake(balance: float, fraction: float, initial_balance: float = INITIAL_BALANCE) -> dict:
-    """Importe por usuario a partir de la fracción recomendada.
-
-    Aplica halving si el saldo cayó por debajo del 50% del inicial (no perseguir pérdidas).
-    Devuelve {fraction, eur, pct, too_small, bettable, message}.
+    El filtro de value (EV>0, confianza, cuota) lo aplica value/ev.py antes; aquí solo el sizing.
     """
-    eff_fraction = fraction
-    halved = False
-    if balance < 0.5 * initial_balance:
-        eff_fraction = fraction / 2.0
-        halved = True
-
-    eur = round(balance * eff_fraction, 2)
-    pct = eff_fraction
-    too_small = eur < settings.min_stake_eur
-    bettable = eff_fraction > 0 and not too_small
-    message = "demasiado pequeña, no apostar" if (eff_fraction > 0 and too_small) else None
-    return {
-        "fraction": eff_fraction,
-        "eur": eur,
-        "pct": pct,
-        "too_small": too_small,
-        "bettable": bettable,
-        "halved": halved,
-        "message": message,
-    }
+    return settings.min_stake_pct
 
 
-def compute(p: float, odds: float, balance: float, initial_balance: float = INITIAL_BALANCE) -> dict:
-    """Atajo: de (prob, cuota, saldo) al detalle de stake para la UI."""
-    frac = recommended_fraction(p, odds)
-    return user_stake(balance, frac, initial_balance)
+def user_stake(balance: float, fraction: float | None = None) -> dict:
+    """Importe por usuario: max(20% del saldo, 10 €), limitado al 25% del saldo.
+
+    En saldos bajos donde el mínimo de 10 € supera el 25%, manda el mínimo de 10 € (acotado al
+    saldo). Saldo < 10 € → no apostar. Devuelve {eur, pct, too_small, bettable, message}.
+    """
+    min_eur = settings.min_stake_eur
+    if balance < min_eur:
+        return {"eur": 0.0, "pct": 0.0, "too_small": True, "bettable": False,
+                "message": f"saldo insuficiente (mín. {min_eur:.0f} €)"}
+
+    floor = max(settings.min_stake_pct * balance, min_eur)  # 20% del saldo o 10 €
+    cap = settings.max_stake_pct * balance                  # 25% del saldo
+    eur = floor if floor <= cap else min(floor, balance)    # en saldos bajos manda el mínimo de 10 €
+    eur = round(eur, 2)
+    pct = eur / balance if balance > 0 else 0.0
+    return {"eur": eur, "pct": pct, "too_small": False, "bettable": True, "message": None}
+
+
+def compute(p: float, odds: float, balance: float) -> dict:
+    """Atajo para la UI: de (prob, cuota, saldo) al detalle de stake."""
+    return user_stake(balance)
 
 
 def assign_recommended_stake(prediction: Prediction) -> float:
-    """Setea y devuelve la fracción ¼ Kelly recomendada en la predicción (user-independent)."""
+    """Setea y devuelve la fracción nominal recomendada en la predicción (user-independent)."""
     frac = recommended_fraction(prediction.model_prob, prediction.offered_odds)
     prediction.recommended_stake = frac
     return frac

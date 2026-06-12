@@ -128,18 +128,17 @@ virtuales (`users.balance DEFAULT 50.0`). Son 7 saldos independientes. Cada usua
 ("apostar") o se salta ("saltar") cada recomendación; su saldo refleja SOLO lo que apostó.
 
 ### 5.1 Cálculo del stake (`bankroll/kelly.py`), por usuario
-- Fracción Kelly: f = ((odds−1)·p − (1−p)) / (odds−1) ; p = model_prob. Solo si f>0.
-- **1/4 Kelly sobre el saldo ACTUAL del usuario**: `stake = saldo · (f / 4)`.
-- **Tope duro 5%**: nunca más del 5% del saldo en una apuesta. Si ¼ Kelly lo supera, recortar
-  a `0.05 · saldo`.
-- **Mínimo**: si el stake sale < 1 € (o por debajo del mínimo de la casa), marcar
-  **"demasiado pequeña, no apostar"** (no se recomienda apostar).
-- Solo recomendar si **EV>0 y cuota ≥ 1.40**. Nunca todo el saldo en un partido
-  (p.ej. con 50 €, recomendar 8–15 €, jamás 50 €).
-- Devolver stake en **€ y en % del saldo** (p.ej. "Apuesta 8,50 € — 17% de tu saldo, cuota 1,75").
-- El € se **recalcula individualmente** sobre el saldo de cada usuario, aunque el pronóstico
-  (outcome + cuota) sea el mismo para todos.
-- No perseguir pérdidas. Si el saldo de un usuario cae >50% del inicial, reducir la unidad a la mitad.
+Política de dimensionamiento (decidida por el grupo): cada apuesta es **significativa**.
+- **stake = max(20% del saldo, 10 €)**, limitado al **25% del saldo** (`MIN_STAKE_PCT=0.20`,
+  `MAX_STAKE_EUR` mínimo `MIN_STAKE_EUR=10`, `MAX_STAKE_PCT=0.25`).
+- **Nunca recomendar menos de 10 €.** Si el saldo del usuario es **< 10 €**, no se recomienda
+  apostar (importe demasiado pequeño).
+- En saldos bajos donde 10 € supera el 25%, manda el mínimo de 10 € (acotado al saldo).
+- Solo recomendar si **EV>0, confianza ≥ MIN_CONFIDENCE y cuota ≥ 1.40** (filtro en `value/ev.py`).
+- Devolver stake en **€ y en % del saldo**. El € se **recalcula individualmente** por usuario.
+- `predictions.recommended_stake` guarda la **fracción nominal** (0.20), user-independent; el € por
+  usuario lo calcula `kelly.user_stake(saldo)`.
+- (Nota: sustituye la política conservadora previa de ¼ Kelly + tope 5%; sin halving.)
 
 ### 5.2 Liquidación automática
 - Al terminar el partido (`matches.status = finished` con goles), liquidar cada `bets` abierta:
@@ -155,7 +154,9 @@ Sobre cada recomendación, cada usuario tiene cuatro caminos (`bets.decision`):
 - **Aceptar** (`recommended`): apuesta con el importe recomendado.
 - **Rechazar** (`rejected`): no apuesta; no afecta al saldo (`status=void`, queda fuera).
 - **Cambiar importe** (`modified`): acepta con su propio importe. Validar
-  **MIN_STAKE_EUR ≤ importe ≤ saldo actual**; si no, no permitir confirmar.
+  **MIN_STAKE_EUR (10 €) ≤ importe ≤ saldo actual**; si no, no permitir confirmar.
+- **Deshacer**: borra la decisión (la apuesta vuelve a estar disponible: reaparecen Aceptar/
+  Rechazar/Cambiar y el dinero comprometido se libera). Permitido dentro de la ventana (ver lock).
 - **No hacer nada** (`default`): cuenta como apuesta con el importe recomendado (el comportamiento
   por defecto es apostar lo recomendado salvo rechazo explícito).
 
@@ -166,11 +167,13 @@ Reglas:
   **individualmente** en la liquidación (§5.2) con el importe efectivo.
 - Estados: `recommended | modified | rejected | default` → tras el partido pasan a `won/lost`
   (las `rejected` quedan fuera).
-- **Lock al inicio**: hasta que el partido empieza (`status=scheduled`) el usuario puede cambiar su
-  decisión; al pasar a `live` queda **bloqueada** (lo que haya entonces cuenta, incluido `default`).
-  El scheduler materializa los `default` (de quienes no interactuaron) al bloquear (Fase 12).
-- UI (detalle de partido, móvil): botones **Aceptar / Rechazar / Cambiar importe**; este último abre
-  un **bottom-sheet** con importe, beneficio potencial en vivo y % del saldo, y botón Confirmar.
+- **Lock a T‒30**: todas las acciones (aceptar/rechazar/cambiar/**deshacer**) están permitidas
+  **hasta 30 min antes** del partido (`LOCK_MINUTES_BEFORE=30`); a partir de ahí queda **bloqueado**
+  (lo que haya entonces cuenta, incluido `default`). El scheduler materializa los `default` al
+  bloquear el partido (Fase 12). `betting_open(match, now)` centraliza esta regla.
+- UI (detalle de partido, móvil): botones **Aceptar / Rechazar / Cambiar importe**; con decisión ya
+  tomada aparecen **Cambiar** y **Deshacer**. "Cambiar importe" abre un **bottom-sheet** con importe,
+  beneficio potencial en vivo y % del saldo, y botón Confirmar. Tras T‒30: "Cerrado (faltan <30 min)".
 
 ---
 

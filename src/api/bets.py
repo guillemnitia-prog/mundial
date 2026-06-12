@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from src.auth.dependencies import require_onboarded
-from src.bankroll.bets import BettingError, record_decision
+from src.bankroll.bets import BettingError, record_decision, undo_decision
 from src.db.schema import Bet, Prediction, User
 from src.db.session import get_db
 
@@ -20,6 +20,7 @@ _ERROR_STATUS = {
     "invalid_amount": 422,  # Unprocessable Content
     "invalid_action": status.HTTP_400_BAD_REQUEST,
     "match_not_found": status.HTTP_404_NOT_FOUND,
+    "no_decision": status.HTTP_404_NOT_FOUND,
 }
 
 
@@ -69,6 +70,25 @@ def decide(
             detail=exc.code,
         )
     return BetOut.from_bet(bet)
+
+
+@router.delete("/predictions/{prediction_id}/decision", status_code=status.HTTP_204_NO_CONTENT)
+def undo(
+    prediction_id: int,
+    current_user: User = Depends(require_onboarded),
+    db: Session = Depends(get_db),
+):
+    prediction = db.get(Prediction, prediction_id)
+    if prediction is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="prediction_not_found")
+    try:
+        undo_decision(db, current_user, prediction)
+    except BettingError as exc:
+        raise HTTPException(
+            status_code=_ERROR_STATUS.get(exc.code, status.HTTP_400_BAD_REQUEST),
+            detail=exc.code,
+        )
+    return None
 
 
 @router.get("/me/bets", response_model=list[BetOut])

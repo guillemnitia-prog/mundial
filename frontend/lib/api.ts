@@ -29,6 +29,7 @@ export const api = {
   get: <T>(p: string) => req<T>(p),
   post: <T>(p: string, body?: unknown) =>
     req<T>(p, { method: "POST", body: body ? JSON.stringify(body) : undefined }),
+  del: <T>(p: string) => req<T>(p, { method: "DELETE" }),
 };
 
 // --- tipos compartidos ---

@@ -56,15 +56,17 @@ Lee SPEC.md para la especificación completa antes de implementar cualquier mód
 - Saldo VIRTUAL INDIVIDUAL: cada uno de los 7 usuarios empieza con 50 € (users.balance,
   DEFAULT 50.0). NO es un bote común: 7 saldos independientes. El stake en € se recalcula
   por usuario sobre su saldo ACTUAL, aunque el pronóstico (outcome+cuota) sea el mismo.
-- Stake = 1/4 Kelly sobre el saldo del usuario (stake = saldo·(f/4)), nunca >5% del saldo.
-  No apostar si EV<=0. Si el stake sale <1 € (o < mínimo de la casa): "demasiado pequeña,
-  no apostar". Nunca todo el saldo en un partido. Devolver stake en € y en % del saldo.
+- Stake por usuario = max(20% del saldo, 10 €), tope 25% del saldo (MIN_STAKE_PCT=0.20,
+  MIN_STAKE_EUR=10, MAX_STAKE_PCT=0.25). NUNCA recomendar < 10 €; si el saldo < 10 €, no apostar.
+  No apostar si EV<=0. Devolver stake en € y en % del saldo; el € es individual por usuario.
+  (Sustituye la política previa de ¼ Kelly/5%; sin halving.)
 - DECISIÓN por usuario sobre cada recomendación (bets.decision): aceptar (recommended),
-  rechazar (rejected, fuera), cambiar importe (modified; validar MIN_STAKE_EUR<=importe<=saldo),
-  o no interactuar (default = apostar lo recomendado salvo rechazo explícito). El importe EFECTIVO
-  (bets.stake) manda y es individual. Editable hasta el inicio; al pasar a 'live' queda bloqueada
-  (el scheduler materializa los 'default' al bloquear). UI: botones Aceptar/Rechazar/Cambiar importe
-  (bottom-sheet con beneficio potencial y % del saldo).
+  rechazar (rejected, fuera), cambiar importe (modified; validar 10€<=importe<=saldo), deshacer
+  (borra la decisión y libera el dinero; reaparecen las opciones), o no interactuar (default =
+  apostar lo recomendado salvo rechazo). El importe EFECTIVO (bets.stake) manda y es individual.
+  Editable (incl. deshacer) hasta 30 min antes del partido (LOCK_MINUTES_BEFORE); luego bloqueado
+  (el scheduler materializa los 'default' al bloquear). UI: Aceptar/Rechazar/Cambiar y, con decisión,
+  Cambiar/Deshacer (bottom-sheet con beneficio potencial y % del saldo).
 - Liquidación AUTOMÁTICA al terminar el partido con el IMPORTE EFECTIVO de cada usuario
   (gana: balance+=stake·(odds−1); pierde: balance−=stake), registrando cada movimiento en
   balance_ledger. Idempotente. Ranking de grupo por saldo.

@@ -71,9 +71,11 @@ class Settings:
     # --- Parámetros de dominio (reglas no negociables) ---
     min_odds: float = 1.40       # cuota decimal mínima de los pronósticos
     min_confidence: float = 0.70  # prob. mínima del modelo para recomendar (alta confianza)
-    kelly_fraction: float = 0.25  # 1/4 Kelly
-    max_stake_pct: float = 0.05   # tope 5% del bankroll por apuesta
-    min_stake_eur: float = 1.0    # mínimo de la casa por apuesta (€)
+    kelly_fraction: float = 0.25  # 1/4 Kelly (informativo; el staking usa min/max pct)
+    min_stake_pct: float = 0.20   # suelo: al menos el 20% del saldo por apuesta
+    max_stake_pct: float = 0.25   # tope: nunca más del 25% del saldo por apuesta
+    min_stake_eur: float = 10.0   # mínimo por apuesta (€); por debajo no se recomienda
+    lock_minutes_before: int = 30  # las apuestas se bloquean N min antes del partido
     group_bankroll: float = 350.0  # 7 amigos x 50 €
 
     # --- Datos ---
@@ -112,8 +114,10 @@ class Settings:
             min_odds=_get_float("MIN_ODDS", 1.40),
             min_confidence=_get_float("MIN_CONFIDENCE", 0.70),
             kelly_fraction=_get_float("KELLY_FRACTION", 0.25),
-            max_stake_pct=_get_float("MAX_STAKE_PCT", 0.05),
-            min_stake_eur=_get_float("MIN_STAKE_EUR", 1.0),
+            min_stake_pct=_get_float("MIN_STAKE_PCT", 0.20),
+            max_stake_pct=_get_float("MAX_STAKE_PCT", 0.25),
+            min_stake_eur=_get_float("MIN_STAKE_EUR", 10.0),
+            lock_minutes_before=_get_int("LOCK_MINUTES_BEFORE", 30),
             group_bankroll=_get_float("GROUP_BANKROLL", 350.0),
             database_url=_get_str("DATABASE_URL", "sqlite:///data/worldcup.db"),
             odds_region=_get_str("ODDS_REGION", "eu"),

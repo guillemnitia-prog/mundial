@@ -29,7 +29,9 @@ export default function MatchDetailPage() {
     api.get<Me>("/auth/me").then((me) => setBalance(me.balance)).catch(() => {});
   }, [id]);
 
-  const locked = m?.state === "en vivo" || m?.state === "finalizado";
+  // Bloqueo: en vivo/finalizado, o a menos de 30 min del inicio.
+  const within30 = !!m?.utc_date && Date.now() > new Date(m.utc_date).getTime() - 30 * 60 * 1000;
+  const locked = m?.state === "en vivo" || m?.state === "finalizado" || within30;
 
   return (
     <div>

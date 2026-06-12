@@ -59,8 +59,8 @@ def test_match_detail_with_pick_and_stake(client, db):
     pick = d["picks"][0]
     assert pick["confidence"] == "alta"
     assert pick["ev_pct"] == 36.5
-    assert pick["stake_eur"] == 2.5   # 50 · 0.05
-    assert pick["stake_pct"] == 5.0
+    assert pick["stake_eur"] == 10.0   # max(20% de 50, 10€)
+    assert pick["stake_pct"] == 20.0
     assert pick["your_decision"] is None
     assert "proxy" in d["odds_proxy_notice"].lower()
     assert d["message"] is None

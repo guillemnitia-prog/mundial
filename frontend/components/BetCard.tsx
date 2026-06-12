@@ -5,7 +5,7 @@ import { api, ApiError, Pick } from "@/lib/api";
 import { eur, odds as fmtOdds, outcomeLabel } from "@/lib/format";
 import { ConfidenceBadge, Press } from "./ui";
 
-const MIN_STAKE = 1;
+const MIN_STAKE = 10;
 
 export function BetCard({
   pick, home, away, balance, locked, onChanged,
@@ -29,7 +29,17 @@ export function BetCard({
       const d = action === "accept" ? "recommended" : action === "modify" ? "modified" : "rejected";
       setDecision(d); onChanged(d); setSheet(false);
     } catch (e) {
-      setErr(e instanceof ApiError && e.detail === "invalid_amount" ? "Importe no válido." : e instanceof ApiError && e.detail === "betting_locked" ? "El partido ya empezó." : "No se pudo guardar.");
+      setErr(e instanceof ApiError && e.detail === "invalid_amount" ? "Importe no válido (mín. 10 €)." : e instanceof ApiError && e.detail === "betting_locked" ? "Cerrado (faltan menos de 30 min)." : "No se pudo guardar.");
+    } finally { setBusy(false); }
+  }
+
+  async function undo() {
+    setBusy(true); setErr(null);
+    try {
+      await api.del(`/predictions/${pick.prediction_id}/decision`);
+      setDecision(null); onChanged("");  // vuelve a sin-decisión: reaparecen los botones
+    } catch (e) {
+      setErr(e instanceof ApiError && e.detail === "betting_locked" ? "Cerrado (faltan menos de 30 min)." : "No se pudo deshacer.");
     } finally { setBusy(false); }
   }
 
@@ -64,10 +74,15 @@ export function BetCard({
       {decision ? (
         <div className="flex items-center justify-between text-sm">
           <span className="text-muted">Tu decisión: <span className="font-medium text-fg">{DEC_LABEL[decision]}</span></span>
-          {!locked && <button className="text-accent" onClick={() => setSheet(true)}>Cambiar</button>}
+          {!locked && (
+            <span className="flex gap-3">
+              {decision !== "rejected" && <button className="text-accent" onClick={() => setSheet(true)}>Cambiar</button>}
+              <button className="text-muted" onClick={undo}>{busy ? "…" : "Deshacer"}</button>
+            </span>
+          )}
         </div>
       ) : locked ? (
-        <p className="text-sm text-muted">Apuestas bloqueadas (el partido ya empezó).</p>
+        <p className="text-sm text-muted">Cerrado (faltan menos de 30 min).</p>
       ) : (
         <div className="flex gap-2">
           <Press onClick={() => decide("accept")} className="flex-1 rounded-btn py-2.5 text-[13px] font-medium" style={{ background: "var(--accent)", color: "#0A0A0A" }}>

@@ -3,13 +3,15 @@
 Cada usuario puede, sobre una recomendación (`predictions`): aceptar (importe recomendado),
 rechazar (no apuesta), cambiar importe (acepta con su propio importe) o no interactuar
 (= apostar lo recomendado por defecto). El importe EFECTIVO por usuario manda en la liquidación.
-La decisión es editable hasta que el partido empieza; al pasar a estado distinto de "scheduled"
-queda bloqueada.
+La decisión es editable (aceptar/rechazar/cambiar/deshacer) hasta **30 min antes** del partido
+(LOCK_MINUTES_BEFORE); a partir de ahí queda bloqueada.
 
 La liquidación es neta: el stake no se descuenta al apostar, solo al liquidar (ver settle.py).
 """
 
 from __future__ import annotations
+
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -17,6 +19,19 @@ from sqlalchemy.orm import Session
 from src.bankroll import kelly
 from src.config import settings
 from src.db.schema import Bet, Match, Prediction, User
+
+
+def betting_open(match: Match, now: datetime | None = None) -> bool:
+    """¿Se pueden cambiar apuestas? Solo si está programado y faltan > LOCK_MINUTES_BEFORE."""
+    if match.status != "scheduled":
+        return False
+    if match.utc_date is None:
+        return True  # kickoff desconocido → permitir mientras esté programado
+    now = now or datetime.now(timezone.utc)
+    kickoff = match.utc_date
+    if kickoff.tzinfo is None:
+        kickoff = kickoff.replace(tzinfo=timezone.utc)
+    return now < kickoff - timedelta(minutes=settings.lock_minutes_before)
 
 
 class BettingError(Exception):
@@ -49,6 +64,7 @@ def record_decision(
     prediction: Prediction,
     action: str,
     custom_amount: float | None = None,
+    now: datetime | None = None,
 ) -> Bet:
     """Registra/actualiza la decisión del usuario sobre una recomendación.
 
@@ -58,8 +74,8 @@ def record_decision(
     match = db.get(Match, prediction.match_id)
     if match is None:
         raise BettingError("match_not_found")
-    # Bloqueo al empezar el partido: solo editable mientras está programado.
-    if match.status != "scheduled":
+    # Bloqueo: editable solo hasta 30 min antes del partido.
+    if not betting_open(match, now):
         raise BettingError("betting_locked")
 
     rec = recommended_eur(user, prediction)
@@ -100,6 +116,25 @@ def record_decision(
     bet.settled_at = None
     db.commit()
     return bet
+
+
+def undo_decision(db: Session, user: User, prediction: Prediction, now: datetime | None = None) -> None:
+    """Deshace la apuesta del usuario sobre una recomendación (hasta 30 min antes del partido).
+
+    Borra la fila `bets`: el dinero comprometido vuelve a estar disponible y reaparecen las opciones
+    (aceptar/rechazar/cambiar). Como no hubo liquidación, no toca `balance_ledger`. Lanza
+    BettingError(`betting_locked`) fuera de ventana o (`no_decision`) si no había apuesta.
+    """
+    match = db.get(Match, prediction.match_id)
+    if match is None:
+        raise BettingError("match_not_found")
+    if not betting_open(match, now):
+        raise BettingError("betting_locked")
+    bet = _get_bet(db, user.id, prediction.id)
+    if bet is None:
+        raise BettingError("no_decision")
+    db.delete(bet)
+    db.commit()
 
 
 def materialize_default_bets(

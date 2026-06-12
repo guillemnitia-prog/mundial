@@ -69,7 +69,7 @@ def test_analyze_match_produces_value_pick(db):
     assert len(picks) >= 1
     assert picks[0]["outcome"] == "home"  # España, fuerte favorito
     pred = db.execute(select(Prediction).where(Prediction.match_id == m.id, Prediction.outcome == "home")).scalar_one()
-    assert pred.recommended_stake == pytest.approx(0.05)  # ¼ Kelly tope 5%
+    assert pred.recommended_stake == pytest.approx(0.20)  # suelo de política (20%)
     assert pred.confidence in ("alta", "media")
     db.refresh(m)
     assert m.analysis_status == "analyzed" and m.analysis_stage == "preliminary"
