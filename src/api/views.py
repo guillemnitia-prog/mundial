@@ -42,8 +42,13 @@ class MatchListItem(BaseModel):
     stage: str
     group_label: str | None
     state: str
+    status: str
     home: str | None
     away: str | None
+    home_code: str | None
+    away_code: str | None
+    home_goals: int | None
+    away_goals: int | None
     n_picks: int
 
 
@@ -75,7 +80,10 @@ class MatchDetail(BaseModel):
     stage: str
     group_label: str | None
     state: str
+    status: str
     neutral_venue: bool
+    home_goals: int | None
+    away_goals: int | None
     analyzed_at: str | None
     analysis_stage: str | None
     home: TeamInfo | None
@@ -126,8 +134,10 @@ def list_matches(_user: User = Depends(require_onboarded), db: Session = Depends
         a = teams.get(m.away_id)
         out.append(MatchListItem(
             id=m.id, utc_date=m.utc_date.isoformat() if m.utc_date else None,
-            stage=m.stage, group_label=m.group_label, state=display_state(m),
+            stage=m.stage, group_label=m.group_label, state=display_state(m), status=m.status,
             home=h.name if h else None, away=a.name if a else None,
+            home_code=h.fifa_code if h else None, away_code=a.fifa_code if a else None,
+            home_goals=m.home_goals, away_goals=m.away_goals,
             n_picks=pick_counts.get(m.id, 0),
         ))
     return out
@@ -168,8 +178,9 @@ def match_detail(match_id: int, current_user: User = Depends(require_onboarded),
     message = None if picks else "Sin apuesta de valor en este partido"
     return MatchDetail(
         id=m.id, utc_date=m.utc_date.isoformat() if m.utc_date else None,
-        stage=m.stage, group_label=m.group_label, state=display_state(m),
+        stage=m.stage, group_label=m.group_label, state=display_state(m), status=m.status,
         neutral_venue=m.neutral_venue,
+        home_goals=m.home_goals, away_goals=m.away_goals,
         analyzed_at=m.analyzed_at.isoformat() if m.analyzed_at else None,
         analysis_stage=m.analysis_stage,
         home=_team_info(home), away=_team_info(away),

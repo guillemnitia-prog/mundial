@@ -52,11 +52,28 @@ def _consensus_market_odds(db: Session, match_id: int) -> dict[str, dict[str, di
     out: dict[str, dict[str, dict]] = {}
     for market, outcomes in by_market.items():
         implied = {oc: sum(1.0 / p for p in prices) / len(prices) for oc, prices in outcomes.items()}
-        fair, _overround = remove_margin(implied)
+        # Devig POR GRUPO de mercado de 2 vías: en Over/Under y hándicap hay que normalizar cada
+        # línea por separado (over_2.5 vs under_2.5), no todas las líneas juntas.
+        groups: dict[str, dict[str, float]] = {}
+        for oc, imp in implied.items():
+            groups.setdefault(_devig_group(market, oc), {})[oc] = imp
+        fair: dict[str, float] = {}
+        for grp in groups.values():
+            fair_grp, _ = remove_margin(grp)
+            fair.update(fair_grp)
         out[market] = {
             oc: {"odds": best_odds[market][oc], "fair_prob": fair[oc]} for oc in outcomes
         }
     return out
+
+
+def _devig_group(market: str, outcome: str) -> str:
+    """Clave de agrupación para quitar el margen. Over/Under y hándicap se normalizan por LÍNEA."""
+    if market in ("over_under", "asian_handicap"):
+        # outcome tipo 'over_2.5' / 'under_2.5' / 'home_-0.5' → agrupar por la línea (número).
+        parts = outcome.rsplit("_", 1)
+        return f"{market}:{parts[1]}" if len(parts) == 2 else market
+    return market
 
 
 def _model_markets(match: Match, home: Team, away: Team, ensemble: EnsembleModel) -> dict | None:

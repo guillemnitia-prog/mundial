@@ -22,6 +22,19 @@ from src.ingest.http_cache import RateLimiter, cached_get
 SOURCE = "the-odds-api"
 ODDS_TTL = 6 * 3600  # 6 h
 
+# Nombres del proveedor de cuotas → nuestros nombres (football-data).
+ODDS_TEAM_ALIASES = {
+    "Bosnia & Herzegovina": "Bosnia-Herzegovina",
+    "Cape Verde": "Cape Verde Islands",
+    "Czech Republic": "Czechia",
+    "DR Congo": "Congo DR",
+    "USA": "United States",
+}
+
+
+def _alias(name: str | None) -> str | None:
+    return ODDS_TEAM_ALIASES.get(name, name)
+
 
 class OddsBudgetError(Exception):
     """Se alcanzaría el presupuesto mensual de créditos; no se llama a la API."""
@@ -120,7 +133,7 @@ class OddsApiClient:
 
         events = self.fetch_odds(db)
 
-        # Índice (home_name, away_name) → match (de nuestros partidos).
+        # Índice (home_name, away_name) → match (con alias de nombres del proveedor de cuotas).
         teams_by_id = {t.id: t for t in db.execute(select(Team)).scalars().all()}
         match_index: dict[tuple[str, str], Match] = {}
         for m in db.execute(select(Match)).scalars().all():
@@ -129,14 +142,15 @@ class OddsApiClient:
             if h and a:
                 match_index[(h.name, a.name)] = m
 
-        matched_events = 0
-        rows = 0
+        now = datetime.now(timezone.utc)
+        matched_ids: list[int] = []
+        new_rows: list[Odds] = []
         for ev in events:
             home, away = ev.get("home_team"), ev.get("away_team")
-            match = match_index.get((home, away))
+            match = match_index.get((_alias(home), _alias(away)))
             if match is None:
                 continue
-            matched_events += 1
+            matched_ids.append(match.id)
             for book in ev.get("bookmakers", []):
                 bk = book.get("key") or book.get("title", "?")
                 for market in book.get("markets", []):
@@ -146,27 +160,17 @@ class OddsApiClient:
                         if norm is None:
                             continue
                         market_norm, outcome_norm = norm
-                        rows += self._upsert_odds(
-                            db, match.id, bk, market_norm, outcome_norm, float(oc["price"])
-                        )
-        db.commit()
-        return {"events": matched_events, "rows": rows}
+                        new_rows.append(Odds(
+                            match_id=match.id, bookmaker=bk, market=market_norm,
+                            outcome=outcome_norm, price=float(oc["price"]), captured_at=now,
+                        ))
 
-    @staticmethod
-    def _upsert_odds(db, match_id, bookmaker, market, outcome, price) -> int:
-        existing = db.execute(
-            select(Odds).where(
-                Odds.match_id == match_id, Odds.bookmaker == bookmaker,
-                Odds.market == market, Odds.outcome == outcome,
-            )
-        ).scalar_one_or_none()
-        if existing is None:
-            db.add(Odds(match_id=match_id, bookmaker=bookmaker, market=market,
-                        outcome=outcome, price=price, captured_at=datetime.now(timezone.utc)))
-            return 1
-        existing.price = price
-        existing.captured_at = datetime.now(timezone.utc)
-        return 0
+        # Reemplazo masivo (rápido): borra las cuotas previas de los partidos afectados e inserta.
+        if matched_ids:
+            db.query(Odds).filter(Odds.match_id.in_(set(matched_ids))).delete(synchronize_session=False)
+            db.bulk_save_objects(new_rows)
+        db.commit()
+        return {"events": len(set(matched_ids)), "rows": len(new_rows)}
 
 
 def main() -> int:
