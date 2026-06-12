@@ -50,14 +50,15 @@ export function whyRecommendation(
   evPct: number, confidence: string | null, home?: string, away?: string,
 ): string {
   const label = outcomeLabel(market, outcome, home, away);
-  const edge = Math.round((modelProb - fairProb) * 100);
   const m = Math.round(modelProb * 100);
   const f = Math.round(fairProb * 100);
-  const conf = confidence === "alta" ? "alta" : "media";
+  const per10 = ((evPct / 100) * 10).toFixed(2).replace(".", ",");
   return (
-    `El modelo da ${m}% a «${label}», frente al ${f}% que implica el mercado` +
-    `${edge > 0 ? ` (+${edge} puntos de ventaja)` : ""}. ` +
-    `Eso deja un valor esperado de +${evPct}%. Confianza ${conf}.`
+    `Nuestro modelo cree que «${label}» pasará con un ${m}% de probabilidad, ` +
+    `bastante más que el ${f}% que reflejan las cuotas de las casas. ` +
+    `Como lo vemos más probable de lo que paga la casa, la apuesta sale a cuenta: ` +
+    `repitiéndola muchas veces, ganarías de media unos ${per10} € por cada 10 € apostados. ` +
+    `Ojo: a corto plazo puede salir mal — ninguna apuesta es segura.`
   );
 }
 
