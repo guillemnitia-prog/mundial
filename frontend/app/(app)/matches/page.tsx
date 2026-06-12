@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api, MatchListItem } from "@/lib/api";
 import { matchDate } from "@/lib/format";
+import { flag } from "@/lib/flags";
 import { Skeleton, StateChip } from "@/components/ui";
 
 export default function MatchesPage() {
@@ -58,14 +59,20 @@ export default function MatchesPage() {
                   </span>
                 ) : <StateChip state={m.state} />}
               </div>
-              <div className="mt-2 flex items-center justify-between gap-3">
-                <span className="text-[15px] font-medium">{m.home ?? "Por definir"}</span>
-                {hasScore ? (
-                  <span className="tabular shrink-0 text-lg font-semibold">{m.home_goals} - {m.away_goals}</span>
-                ) : (
-                  <span className="shrink-0 text-sm text-muted">vs</span>
-                )}
-                <span className="text-[15px] font-medium text-right">{m.away ?? "Por definir"}</span>
+              <div className="mt-2 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                <div className="flex min-w-0 items-center gap-1.5">
+                  <span className="shrink-0 text-lg leading-none">{flag(m.home_code)}</span>
+                  <span className="truncate text-[15px] font-medium">{m.home ?? "Por definir"}</span>
+                </div>
+                <div className="w-14 text-center">
+                  {hasScore
+                    ? <span className="tabular text-lg font-semibold">{m.home_goals}-{m.away_goals}</span>
+                    : <span className="text-sm text-muted">vs</span>}
+                </div>
+                <div className="flex min-w-0 items-center justify-end gap-1.5">
+                  <span className="truncate text-right text-[15px] font-medium">{m.away ?? "Por definir"}</span>
+                  <span className="shrink-0 text-lg leading-none">{flag(m.away_code)}</span>
+                </div>
               </div>
               <div className="mt-2 text-xs">
                 {m.state === "pendiente" ? (

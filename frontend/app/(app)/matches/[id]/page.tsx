@@ -3,14 +3,16 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { api, MatchDetail, Me } from "@/lib/api";
 import { matchDate, timeAgo } from "@/lib/format";
+import { flag } from "@/lib/flags";
 import { BetCard } from "@/components/BetCard";
 import { Disclaimer, FormDots, Skeleton, StateChip } from "@/components/ui";
 
 function TeamCol({ t }: { t: MatchDetail["home"] }) {
+  const f = flag(t?.fifa_code);
   return (
     <div className="w-[38%] text-center">
-      <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full border border-border bg-surface text-sm font-medium">
-        {t?.fifa_code ?? "?"}
+      <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full border border-border bg-surface">
+        <span className="text-2xl leading-none">{f || (t?.fifa_code ?? "?")}</span>
       </div>
       <div className="text-sm font-medium">{t?.name ?? "Por definir"}{t?.is_host && " 🏟"}</div>
       <div className="tabular text-xs text-muted">{t?.elo ? `Elo ${Math.round(t.elo)}` : "—"}</div>
