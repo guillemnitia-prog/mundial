@@ -65,8 +65,8 @@ export default function MatchDetailPage() {
                       {m.home_goals} <span className="text-muted">-</span> {m.away_goals}
                     </div>
                     {m.status === "live" ? (
-                      <div className="mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium" style={{ background: "#FF5252", color: "#0A0A0A" }}>
-                        <span className="h-1.5 w-1.5 rounded-full bg-[#0A0A0A] animate-pulse" /> EN VIVO
+                      <div className="mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium" style={{ background: "#FF5252", color: "#0A1712" }}>
+                        <span className="h-1.5 w-1.5 rounded-full bg-[#0A1712] animate-pulse" /> EN VIVO
                       </div>
                     ) : (
                       <div className="mt-1 text-[11px] text-muted">Finalizado</div>
@@ -101,7 +101,7 @@ export default function MatchDetailPage() {
               <div className="mb-2 text-sm font-medium">Estadísticas del modelo</div>
               <div className="mb-1 flex h-3 overflow-hidden rounded-full">
                 <div style={{ width: `${Math.round(m.stats.x1x2.home * 100)}%`, background: "var(--accent)" }} />
-                <div style={{ width: `${Math.round(m.stats.x1x2.draw * 100)}%`, background: "#525252" }} />
+                <div style={{ width: `${Math.round(m.stats.x1x2.draw * 100)}%`, background: "#3a5a4a" }} />
                 <div style={{ width: `${Math.round(m.stats.x1x2.away * 100)}%`, background: "#2f6f4f" }} />
               </div>
               <div className="tabular flex justify-between text-[11px] text-muted">

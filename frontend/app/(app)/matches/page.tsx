@@ -53,8 +53,8 @@ export default function MatchesPage() {
                   {m.stage === "group" ? `Grupo ${m.group_label ?? ""}` : m.stage} · {matchDate(m.utc_date)}
                 </span>
                 {m.status === "live" ? (
-                  <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium" style={{ background: "#FF5252", color: "#0A0A0A" }}>
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#0A0A0A] animate-pulse" /> EN VIVO
+                  <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium" style={{ background: "#FF5252", color: "#0A1712" }}>
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#0A1712] animate-pulse" /> EN VIVO
                   </span>
                 ) : <StateChip state={m.state} />}
               </div>

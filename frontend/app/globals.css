@@ -3,9 +3,9 @@
 @tailwind utilities;
 
 :root {
-  --bg: #0a0a0a;
-  --surface: #141414;
-  --border: #262626;
+  --bg: #0A1712;
+  --surface: #11241B;
+  --border: #20392C;
   --accent: #00e676;
   --accent-hover: #00c853;
   --accent-faint: #00e67620;
@@ -14,6 +14,8 @@
   --positive: #00e676;
   --negative: #ff5252;
   --warning: #ffb300;
+  --gold: #ffc83d;
+  --header: #0c2a20;
 }
 
 html,
@@ -38,14 +40,20 @@ body {
 }
 
 .glass {
-  background: rgba(20, 20, 20, 0.72);
+  background: rgba(12, 42, 32, 0.82);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid #14513c;
+}
+
+/* Título dorado en cabeceras (estilo casa de apuestas). */
+.glass h1 {
+  color: var(--gold);
 }
 
 /* Skeleton shimmer */
 .skeleton {
-  background: linear-gradient(90deg, #141414 25%, #1f1f1f 50%, #141414 75%);
+  background: linear-gradient(90deg, #11241B 25%, #1a3328 50%, #11241B 75%);
   background-size: 200% 100%;
   animation: shimmer 1.4s infinite;
   border-radius: 12px;

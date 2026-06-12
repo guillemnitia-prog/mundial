@@ -60,7 +60,7 @@ export default function OnboardingPage() {
         <Press
           onClick={confirm}
           className="w-full rounded-btn py-3 font-medium disabled:opacity-40"
-          style={{ background: "var(--accent)", color: "#0A0A0A" }}
+          style={{ background: "var(--accent)", color: "#0A1712" }}
         >
           {busy ? "Guardando…" : selected ? "Confirmar campeón" : "Selecciona un equipo"}
         </Press>

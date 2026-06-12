@@ -5,7 +5,7 @@ function Step({ n, title, children }: { n: string; title: string; children: Reac
   return (
     <div className="rounded-card border border-border bg-surface p-4">
       <div className="mb-1 flex items-center gap-2">
-        <span className="flex h-6 w-6 items-center justify-center rounded-full text-[12px] font-semibold" style={{ background: "var(--accent)", color: "#0A0A0A" }}>{n}</span>
+        <span className="flex h-6 w-6 items-center justify-center rounded-full text-[12px] font-semibold" style={{ background: "var(--accent)", color: "#0A1712" }}>{n}</span>
         <span className="text-[15px] font-medium">{title}</span>
       </div>
       <div className="text-[13px] leading-relaxed text-muted">{children}</div>

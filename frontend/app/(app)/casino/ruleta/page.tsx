@@ -6,7 +6,7 @@ import { eur } from "@/lib/format";
 import { Press } from "@/components/ui";
 
 const RED = new Set([1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]);
-const colorOf = (n: number) => (n === 0 ? "#00E676" : RED.has(n) ? "#FF5252" : "#262626");
+const colorOf = (n: number) => (n === 0 ? "#00E676" : RED.has(n) ? "#FF5252" : "#20392C");
 
 interface SpinResult { result: number; color: string; won: boolean; delta: number; balance: number; }
 
@@ -57,7 +57,7 @@ export default function RuletaPage() {
     return (
       <button onClick={() => setPick({ type: "color", sel })}
         className="flex-1 rounded-btn py-3 text-sm font-medium"
-        style={{ background: bg, color: sel === "black" ? "#F5F5F5" : "#0A0A0A", outline: active ? "2px solid #FFB300" : "none" }}>
+        style={{ background: bg, color: sel === "black" ? "#F5F5F5" : "#0A1712", outline: active ? "2px solid #FFB300" : "none" }}>
         {label}
       </button>
     );
@@ -77,7 +77,7 @@ export default function RuletaPage() {
         {/* Rueda / resultado */}
         <div className="mb-5 flex flex-col items-center rounded-card p-6" style={{ background: "#0c2a20", border: "1px solid #14513c" }}>
           <div className="flex h-28 w-28 items-center justify-center rounded-full border-4" style={{ borderColor: "#FFB300", background: colorOf(display) }}>
-            <span className="tabular text-4xl font-bold" style={{ color: display === 0 || RED.has(display) ? "#0A0A0A" : "#F5F5F5" }}>{display}</span>
+            <span className="tabular text-4xl font-bold" style={{ color: display === 0 || RED.has(display) ? "#0A1712" : "#F5F5F5" }}>{display}</span>
           </div>
           <div className="mt-3 h-5 text-sm">
             {last && (
@@ -92,7 +92,7 @@ export default function RuletaPage() {
         <div className="mb-2 text-sm font-medium text-muted">Tu apuesta</div>
         <div className="mb-3 flex gap-2">
           <ColorBtn sel="red" label="Rojo (x2)" bg="#FF5252" />
-          <ColorBtn sel="black" label="Negro (x2)" bg="#262626" />
+          <ColorBtn sel="black" label="Negro (x2)" bg="#20392C" />
           <ColorBtn sel="green" label="0 (x36)" bg="#00E676" />
         </div>
         <div className="mb-4 flex items-center gap-2">
@@ -113,7 +113,7 @@ export default function RuletaPage() {
 
         {err && <p className="mb-2 text-sm text-negative">{err}</p>}
         <Press onClick={spin} className="w-full rounded-btn py-3.5 text-base font-semibold disabled:opacity-40"
-          style={{ background: valid ? "var(--accent)" : "#262626", color: valid ? "#0A0A0A" : "#737373" }}>
+          style={{ background: valid ? "var(--accent)" : "#20392C", color: valid ? "#0A1712" : "#737373" }}>
           {spinning ? "Girando…" : "Girar"}
         </Press>
 

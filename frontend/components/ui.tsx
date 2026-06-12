@@ -7,9 +7,9 @@ export function Skeleton({ className = "" }: { className?: string }) {
 
 export function StateChip({ state }: { state: string }) {
   const map: Record<string, { bg: string; fg: string }> = {
-    analizado: { bg: "#00E676", fg: "#0A0A0A" },
-    "en vivo": { bg: "#FF5252", fg: "#0A0A0A" },
-    finalizado: { bg: "#262626", fg: "#A3A3A3" },
+    analizado: { bg: "#00E676", fg: "#0A1712" },
+    "en vivo": { bg: "#FF5252", fg: "#0A1712" },
+    finalizado: { bg: "#20392C", fg: "#A3A3A3" },
     pendiente: { bg: "#1f1f1f", fg: "#A3A3A3" },
   };
   const c = map[state] ?? map.pendiente;
@@ -26,7 +26,7 @@ export function ConfidenceBadge({ confidence }: { confidence: string | null }) {
   return (
     <span
       className="rounded-full px-2 py-0.5 text-[10px] font-medium"
-      style={{ background: alta ? "#00E676" : "#FFB300", color: alta ? "#0A0A0A" : "#412402" }}
+      style={{ background: alta ? "#00E676" : "#FFB300", color: alta ? "#0A1712" : "#412402" }}
     >
       {alta ? "Confianza alta" : "Confianza media"}
     </span>

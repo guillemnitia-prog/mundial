@@ -55,10 +55,10 @@ export default function ChatPage() {
           const mine = m.username === me;
           return (
             <div key={i} className={`mb-2 flex ${mine ? "justify-end" : "justify-start"}`}>
-              <div className="max-w-[78%] rounded-2xl px-3 py-2" style={{ background: mine ? "var(--accent)" : "var(--surface)", color: mine ? "#0A0A0A" : "var(--text)" }}>
+              <div className="max-w-[78%] rounded-2xl px-3 py-2" style={{ background: mine ? "var(--accent)" : "var(--surface)", color: mine ? "#0A1712" : "var(--text)" }}>
                 {!mine && <div className="text-[11px] font-medium text-accent">{m.username}</div>}
                 <div className="text-sm">{m.content}</div>
-                <div className="mt-0.5 text-[10px]" style={{ color: mine ? "#0A0A0A99" : "var(--text-secondary)" }}>
+                <div className="mt-0.5 text-[10px]" style={{ color: mine ? "#0A171299" : "var(--text-secondary)" }}>
                   {new Date(m.created_at).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
                 </div>
               </div>
@@ -75,7 +75,7 @@ export default function ChatPage() {
           placeholder="Mensaje…"
           className="flex-1 rounded-btn border border-border bg-surface px-4 py-2.5 text-sm outline-none focus:border-accent"
         />
-        <button onClick={send} className="rounded-btn px-4 font-medium" style={{ background: "var(--accent)", color: "#0A0A0A" }}>Enviar</button>
+        <button onClick={send} className="rounded-btn px-4 font-medium" style={{ background: "var(--accent)", color: "#0A1712" }}>Enviar</button>
       </div>
     </div>
   );

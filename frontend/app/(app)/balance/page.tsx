@@ -82,7 +82,7 @@ export default function BalancePage() {
             className="tabular w-full rounded-btn border border-border bg-bg px-4 py-2.5 outline-none focus:border-accent"
           />
           <div className="mt-2 flex gap-2">
-            <Press onClick={() => adjust("deposit")} className="flex-1 rounded-btn py-2 text-sm font-medium" style={{ background: "var(--accent)", color: "#0A0A0A" }}>
+            <Press onClick={() => adjust("deposit")} className="flex-1 rounded-btn py-2 text-sm font-medium" style={{ background: "var(--accent)", color: "#0A1712" }}>
               {busy ? "…" : "Ingresar"}
             </Press>
             <Press onClick={() => adjust("withdraw")} className="flex-1 rounded-btn border border-border py-2 text-sm text-fg">Retirar</Press>
@@ -98,7 +98,7 @@ export default function BalancePage() {
               <div className="text-sm font-medium">Notificaciones</div>
               <div className="text-xs text-muted">Avisos de apuestas y resultados</div>
             </div>
-            <Press onClick={enablePush} className="rounded-btn px-4 py-2 text-sm font-medium" style={{ background: "var(--accent)", color: "#0A0A0A" }}>
+            <Press onClick={enablePush} className="rounded-btn px-4 py-2 text-sm font-medium" style={{ background: "var(--accent)", color: "#0A1712" }}>
               Activar
             </Press>
           </div>

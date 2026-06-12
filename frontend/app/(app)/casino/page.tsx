@@ -7,7 +7,7 @@ export default function CasinoPage() {
   return (
     <div>
       <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-[#14513c] px-4 py-3"
-        style={{ background: "linear-gradient(180deg,#0c2a20,#0A0A0A)", paddingTop: "calc(12px + env(safe-area-inset-top))" }}>
+        style={{ background: "linear-gradient(180deg,#0c2a20,#0A1712)", paddingTop: "calc(12px + env(safe-area-inset-top))" }}>
         <h1 className="text-lg font-semibold" style={{ color: "#FFB300" }}>Casino</h1>
         <span className="ml-auto rounded-full px-2 py-0.5 text-[10px] font-medium" style={{ background: "var(--warning)", color: "#412402" }}>BETA</span>
       </header>
@@ -19,13 +19,13 @@ export default function CasinoPage() {
           style={{ borderColor: "#FFB300", background: "#0c2a20" }}>
           <div className="flex items-center gap-3">
             <div className="flex h-14 w-14 items-center justify-center rounded-full border-2" style={{ borderColor: "#FFB300", background: "#FF5252" }}>
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0A0A0A" strokeWidth="2"><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="2" /><path d="M12 3v18M3 12h18" /></svg>
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0A1712" strokeWidth="2"><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="2" /><path d="M12 3v18M3 12h18" /></svg>
             </div>
             <div className="flex-1">
               <div className="text-base font-semibold">Ruleta</div>
               <div className="text-xs text-muted">Rojo, negro o pleno. Saldo virtual.</div>
             </div>
-            <span className="rounded-full px-3 py-1.5 text-sm font-semibold" style={{ background: "var(--accent)", color: "#0A0A0A" }}>Jugar →</span>
+            <span className="rounded-full px-3 py-1.5 text-sm font-semibold" style={{ background: "var(--accent)", color: "#0A1712" }}>Jugar →</span>
           </div>
         </motion.button>
 

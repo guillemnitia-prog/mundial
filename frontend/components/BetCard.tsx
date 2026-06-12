@@ -72,7 +72,7 @@ export function BetCard({
         <div className="flex items-center gap-2 text-[11px]">
           <span className="w-14 text-muted">Mercado</span>
           <div className="h-2 flex-1 overflow-hidden rounded-full bg-border">
-            <div className="h-full" style={{ width: `${Math.round(pick.fair_prob * 100)}%`, background: "#525252" }} />
+            <div className="h-full" style={{ width: `${Math.round(pick.fair_prob * 100)}%`, background: "#3a5a4a" }} />
           </div>
           <span className="tabular w-8 text-right text-muted">{Math.round(pick.fair_prob * 100)}%</span>
         </div>
@@ -112,7 +112,7 @@ export function BetCard({
         <p className="text-sm text-muted">Cerrado (faltan menos de 30 min).</p>
       ) : (
         <div className="flex gap-2">
-          <Press onClick={() => decide("accept")} className="flex-1 rounded-btn py-2.5 text-[13px] font-medium" style={{ background: "var(--accent)", color: "#0A0A0A" }}>
+          <Press onClick={() => decide("accept")} className="flex-1 rounded-btn py-2.5 text-[13px] font-medium" style={{ background: "var(--accent)", color: "#0A1712" }}>
             {busy ? "…" : "Aceptar"}
           </Press>
           <Press onClick={() => setSheet(true)} className="flex-1 rounded-btn border border-border py-2.5 text-[13px] text-fg">Cambiar</Press>
@@ -149,7 +149,7 @@ export function BetCard({
               <Press
                 onClick={() => validCustom && decide("modify", Math.round(custom * 100) / 100)}
                 className="mt-5 w-full rounded-btn py-3 font-medium disabled:opacity-40"
-                style={{ background: validCustom ? "var(--accent)" : "#262626", color: validCustom ? "#0A0A0A" : "#737373" }}
+                style={{ background: validCustom ? "var(--accent)" : "#20392C", color: validCustom ? "#0A1712" : "#737373" }}
               >
                 {busy ? "Guardando…" : "Confirmar apuesta"}
               </Press>

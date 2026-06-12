@@ -48,7 +48,7 @@ export default function LoginPage() {
         {error && <p className="text-sm text-negative">{error}</p>}
         <Press
           className="mt-2 rounded-btn py-3 font-medium disabled:opacity-50"
-          style={{ background: "var(--accent)", color: "#0A0A0A" }}
+          style={{ background: "var(--accent)", color: "#0A1712" }}
         >
           {busy ? "Entrando…" : "Entrar"}
         </Press>

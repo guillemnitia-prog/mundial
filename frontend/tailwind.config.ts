@@ -6,9 +6,9 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        bg: "#0A0A0A",
-        surface: "#141414",
-        border: "#262626",
+        bg: "#0A1712",
+        surface: "#11241B",
+        border: "#20392C",
         accent: "#00E676",
         accentHover: "#00C853",
         accentFaint: "#00E67620",
@@ -17,6 +17,7 @@ const config: Config = {
         positive: "#00E676",
         negative: "#FF5252",
         warning: "#FFB300",
+        gold: "#FFC83D",
       },
       borderRadius: {
         card: "18px",
