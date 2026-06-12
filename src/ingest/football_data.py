@@ -100,6 +100,22 @@ class FootballDataClient:
 
         return cached_get(db, SOURCE, cache_key, ttl, fetcher)
 
+    def refresh_match(self, db: Session, match, ttl: int = 60) -> None:
+        """Actualiza marcador y estado de UN partido desde football-data (cacheado ~60 s)."""
+        if not match.external_id:
+            return
+        try:
+            data = self._get(db, f"/matches/{match.external_id}", ttl)
+        except Exception:
+            return
+        m = data.get("match", data) if isinstance(data, dict) else {}
+        ft = (m.get("score") or {}).get("fullTime") or {}
+        new_status = map_status(m.get("status"))
+        match.status = new_status
+        match.home_goals = ft.get("home")
+        match.away_goals = ft.get("away")
+        db.commit()
+
     # --- Ingesta -----------------------------------------------------------
 
     def ingest_teams(self, db: Session) -> int:

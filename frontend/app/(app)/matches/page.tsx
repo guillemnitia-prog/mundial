@@ -16,7 +16,12 @@ export default function MatchesPage() {
     setMatches(data);
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+    // Refresco automático cada 30 s (marcadores en vivo).
+    const t = setInterval(() => { load(); }, 30000);
+    return () => clearInterval(t);
+  }, [load]);
 
   async function onRefresh() {
     setRefreshing(true);

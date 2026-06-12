@@ -25,8 +25,14 @@ export default function MatchDetailPage() {
   const [balance, setBalance] = useState(0);
 
   useEffect(() => {
-    api.get<MatchDetail>(`/matches/${id}`).then(setM).catch(() => {});
+    const load = () => api.get<MatchDetail>(`/matches/${id}`).then(setM).catch(() => {});
+    load();
     api.get<Me>("/auth/me").then((me) => setBalance(me.balance)).catch(() => {});
+    // Si el partido está en vivo, refresca el marcador cada 20 s.
+    const t = setInterval(() => {
+      setM((cur) => { if (cur?.state === "en vivo") load(); return cur; });
+    }, 20000);
+    return () => clearInterval(t);
   }, [id]);
 
   // Bloqueo: en vivo/finalizado, o a menos de 30 min del inicio.

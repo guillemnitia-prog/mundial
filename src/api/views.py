@@ -6,6 +6,8 @@ Solo lectura sobre las tablas existentes. La generación de `predictions` la hac
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy import func, select
@@ -17,6 +19,19 @@ from src.bankroll import kelly
 from src.bankroll.balance import BalanceError
 from src.db.schema import Bet, Match, Prediction, Team, User
 from src.db.session import get_db
+from src.ingest.football_data import FootballDataClient
+
+_fd_client = FootballDataClient()
+
+
+def _maybe_refresh_live(db: Session, match: Match) -> None:
+    """Refresca el marcador en vivo desde football-data si el partido está en su ventana de juego."""
+    if match.status == "finished" or match.utc_date is None:
+        return
+    now = datetime.now(timezone.utc)
+    kickoff = match.utc_date if match.utc_date.tzinfo else match.utc_date.replace(tzinfo=timezone.utc)
+    if kickoff <= now <= kickoff + timedelta(hours=3):  # ~ventana de un partido
+        _fd_client.refresh_match(db, match)
 
 router = APIRouter(tags=["views"])
 
@@ -133,6 +148,9 @@ def _recent_form(db: Session, team_id: int) -> list[str]:
 @router.get("/matches", response_model=list[MatchListItem])
 def list_matches(_user: User = Depends(require_onboarded), db: Session = Depends(get_db)):
     matches = db.execute(select(Match).order_by(Match.utc_date)).scalars().all()
+    # Refrescar en vivo los partidos que estén en juego (cacheado, pocos a la vez).
+    for m in matches:
+        _maybe_refresh_live(db, m)
     teams = {t.id: t for t in db.execute(select(Team)).scalars().all()}
     pick_counts = {
         mid: n for mid, n in db.execute(
@@ -160,6 +178,7 @@ def match_detail(match_id: int, current_user: User = Depends(require_onboarded),
     m = db.get(Match, match_id)
     if m is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="match_not_found")
+    _maybe_refresh_live(db, m)  # marcador en vivo al abrir el partido
 
     home = db.get(Team, m.home_id) if m.home_id else None
     away = db.get(Team, m.away_id) if m.away_id else None
