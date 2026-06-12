@@ -63,6 +63,20 @@ def test_user_balance_defaults_to_50(session: Session):
     assert u.balance == 50.0  # saldo virtual individual de partida
 
 
+def test_match_analysis_defaults_to_pending(session: Session):
+    home = Team(name="Spain")
+    away = Team(name="Brazil")
+    session.add_all([home, away])
+    session.commit()
+    m = Match(home_id=home.id, away_id=away.id, stage="group")
+    session.add(m)
+    session.commit()
+    session.refresh(m)
+    assert m.analysis_status == "pending"  # el análisis se genera el día del partido
+    assert m.analysis_stage is None
+    assert m.analyzed_at is None
+
+
 def test_foreign_keys_enforced(session: Session):
     # Insertar una apuesta con user_id/match_id inexistentes debe fallar (PRAGMA FK on).
     bad = Bet(user_id=999, match_id=999, market="h2h", outcome="home", stake=5.0, odds=1.75)

@@ -22,16 +22,20 @@ Lee SPEC.md para la especificación completa antes de implementar cualquier mód
 - `pytest`                                 → tests
 
 ## Arquitectura (src/)
-- ingest/   → clientes de APIs: football-data.org, The Odds API, eloratings (con caché)
+- ingest/   → clientes de APIs: football-data.org, The Odds API, eloratings, API-Football
+              (alineaciones/lesiones, opcional, 100/día, cacheado) — todo con caché
 - models/   → dixon_coles.py, elo_model.py, ensemble.py  (EL MODELO VIVE AQUÍ)
-- value/    → devig.py (quita margen) + ev.py (detecta EV>0, filtra cuota >= 1.40)
+- value/    → devig.py (quita margen) + ev.py (doble filtro: model_prob>=MIN_CONFIDENCE y EV>0;
+              cuota>=1.40; clasifica confianza alta/media; no fuerza 2)
 - bankroll/ → kelly.py (1/4 Kelly sobre saldo individual) + settle.py (liquidación + balance_ledger)
 - auth/     → users.py (hash/login), onboarding.py (pregunta campeón), seed_users.py
 - chat/     → manager.py (ConnectionManager/broadcast) + routes.py (/ws/chat)
 - notifications/ → push.py (Web Push con pywebpush; lo dispara el scheduler) + endpoints /push/*
 - db/       → schema.py (SQLite; users.balance, bets por usuario, balance_ledger, push_subscriptions)
 - api/      → main.py (endpoints FastAPI)
-- scheduler/→ daily_refresh.py
+- scheduler/→ daily_refresh.py (pasada de la mañana: analiza SOLO los partidos del día +
+              liquidación + push) + pre_match_refresh.py (pasada final ~2h/~1h antes:
+              alineaciones/lesiones + cuotas frescas + recálculo)
 
 ## Reglas de dominio (CRÍTICAS)
 - El núcleo es VALUE BETTING: cada pronóstico compara prob del modelo vs prob justa del
@@ -39,8 +43,15 @@ Lee SPEC.md para la especificación completa antes de implementar cualquier mód
 - Modelo = ensemble Dixon-Coles (con time-decay) + Elo. Selecciones, no clubes:
   usa Elo de eloratings.net, NUNCA ClubElo.
 - Ventaja local SOLO para anfitriones (USA/Canadá/México). Resto = campo neutral.
-- Los 2 pronósticos por partido SOLO con cuota decimal >= 1.40. Filtrar en value/ev.py
-  ANTES de elegir los 2 de mayor EV. Si quedan <2 con EV>0, mostrar los que haya (no inventar).
+- CONSERVADOR Y SELECTIVO: recomendar SOLO apuestas que cumplan a la vez (a) model_prob >=
+  MIN_CONFIDENCE (def. 0.70) y (b) EV>0, además de cuota decimal >= 1.40. Filtrar en value/ev.py
+  ANTES de ordenar. Hasta 2 picks; NO forzar 2: si ninguno cumple, "Sin apuesta de valor en este
+  partido" (0 picks, no inventar). Clasificar cada pick por confianza (alta/media). Mejor pocas
+  apuestas sólidas que muchas dudosas. Mostrar prob del modelo, cuota, EV% y "ninguna apuesta es segura".
+- ANÁLISIS SOLO EL DÍA DEL PARTIDO (no antes). Ciclo: pendiente → analizado → en vivo → finalizado.
+  Dos pasadas el día del partido: mañana (preliminary) y pre-partido ~2h/~1h (final). matches tiene
+  analysis_status (pending|analyzed), analysis_stage (preliminary|final) y analyzed_at. Los partidos
+  de días futuros se listan como "Análisis pendiente — se generará el día del partido".
 - Saldo VIRTUAL INDIVIDUAL: cada uno de los 7 usuarios empieza con 50 € (users.balance,
   DEFAULT 50.0). NO es un bote común: 7 saldos independientes. El stake en € se recalcula
   por usuario sobre su saldo ACTUAL, aunque el pronóstico (outcome+cuota) sea el mismo.

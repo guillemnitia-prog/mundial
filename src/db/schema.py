@@ -32,6 +32,8 @@ def _utcnow() -> datetime:
 # Valores permitidos (se materializan como CHECK constraints en SQLite).
 MATCH_STAGES = ("group", "R32", "R16", "QF", "SF", "3RD", "F")
 MATCH_STATUSES = ("scheduled", "live", "finished", "postponed", "cancelled")
+ANALYSIS_STATUSES = ("pending", "analyzed")  # el análisis se genera el día del partido
+CONFIDENCE_LEVELS = ("alta", "media")        # nivel de confianza de una recomendación
 USER_ROLES = ("admin", "member")
 BET_STATUSES = ("open", "won", "lost", "void")
 
@@ -71,12 +73,19 @@ class Match(Base):
     away_goals: Mapped[int | None] = mapped_column(Integer)
     status: Mapped[str] = mapped_column(String, nullable=False, default="scheduled")
 
+    # Ciclo de vida del análisis (el análisis se genera el DÍA del partido, no antes).
+    # Estado visible UI = derivado de (status, analysis_status): pendiente → analizado → en vivo → finalizado.
+    analysis_status: Mapped[str] = mapped_column(String, nullable=False, default="pending")  # pending|analyzed
+    analysis_stage: Mapped[str | None] = mapped_column(String)  # preliminary|final (qué pasada lo generó)
+    analyzed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))  # "Actualizado hace X min"
+
     home_team: Mapped["Team"] = relationship("Team", foreign_keys=[home_id])
     away_team: Mapped["Team"] = relationship("Team", foreign_keys=[away_id])
 
     __table_args__ = (
         CheckConstraint(f"stage IN {MATCH_STAGES}", name="ck_matches_stage"),
         CheckConstraint(f"status IN {MATCH_STATUSES}", name="ck_matches_status"),
+        CheckConstraint(f"analysis_status IN {ANALYSIS_STATUSES}", name="ck_matches_analysis_status"),
     )
 
 
@@ -109,6 +118,9 @@ class Prediction(Base):
     # El importe en € se calcula por usuario sobre su saldo en bankroll/kelly.py (Fase 9).
     recommended_stake: Mapped[float | None] = mapped_column(Float)
     rank: Mapped[int | None] = mapped_column(Integer)  # 1 o 2 (los 2 de mayor EV)
+    # Nivel de confianza (alta|media) según model_prob y margen de EV. Solo se guardan
+    # recomendaciones que cumplen model_prob >= MIN_CONFIDENCE y EV>0 y cuota>=1.40 (value/ev.py).
+    confidence: Mapped[str | None] = mapped_column(String)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=_utcnow
     )

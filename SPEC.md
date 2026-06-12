@@ -41,12 +41,16 @@ Regla: toda respuesta de API se cachea en SQLite. Nunca llamar en cada request.
 ```sql
 teams(id PK, external_id UNIQUE, name, fifa_code, elo REAL, confederation, is_host BOOL)
 matches(id PK, external_id UNIQUE, utc_date, home_id FK NULL, away_id FK NULL, group_label, stage,
-        neutral_venue BOOL, home_goals, away_goals, status)   -- stage: group|R32|R16|QF|SF|3RD|F
+        neutral_venue BOOL, home_goals, away_goals, status,
+        analysis_status, analysis_stage, analyzed_at)   -- stage: group|R32|R16|QF|SF|3RD|F
         -- external_id: id de football-data (upsert idempotente). home/away NULL en eliminatorias
         -- aún sin definir (no se analizan hasta confirmarse).
+        -- analysis_status: pending|analyzed (el análisis se genera el DÍA del partido).
+        -- analysis_stage: preliminary|final (pasada de la mañana vs pre-partido). analyzed_at: timestamp.
 odds(id PK, match_id FK, bookmaker, market, outcome, price REAL, captured_at)
 predictions(id PK, match_id FK, market, outcome, model_prob REAL, fair_prob REAL,
-            offered_odds REAL, ev REAL, recommended_stake REAL, rank INT, created_at)
+            offered_odds REAL, ev REAL, recommended_stake REAL, rank INT, confidence, created_at)
+            -- confidence: alta|media (solo se guardan recomendaciones que cumplen los filtros de §4)
 users(id PK, username UNIQUE, password_hash, role, has_onboarded BOOL,
       balance REAL DEFAULT 50.0, created_at)   -- saldo virtual individual, 50 € de partida
 champion_picks(user_id PK FK, team_id FK, created_at)   -- inmutable
@@ -90,17 +94,29 @@ api_cache(id PK, source, cache_key UNIQUE, response_json, fetched_at, expires_at
 
 ---
 
-## 4. Value betting
+## 4. Value betting — conservador y selectivo
+
+Filosofía: **mejor pocas apuestas sólidas que muchas dudosas.** El sistema es deliberadamente
+selectivo; no rellena recomendaciones para cumplir un cupo.
 
 1. Implícita = 1 / cuota_decimal.
 2. Quitar margen: normalización proporcional (dividir cada implícita por la suma de
    implícitas del mercado). El exceso de la suma sobre 1 es el overround.
 3. Value si model_prob > fair_prob del bookie.
 4. EV = model_prob·(cuota−1) − (1−model_prob). Apostar solo si EV>0.
-5. **Filtro de cuota mínima 1.40**: descartar cualquier candidato con cuota < 1.40
-   ANTES de ordenar por EV. Configurable (MIN_ODDS=1.40).
-6. Seleccionar los 2 de mayor EV por partido. Si quedan <2 con EV>0, mostrar los que haya.
-7. Registrar CLV (cuota apostada vs cierre) como métrica de habilidad real.
+5. **Doble filtro obligatorio (ambas condiciones a la vez):**
+   - (a) **model_prob ≥ MIN_CONFIDENCE** (por defecto **0.70**, configurable). Alta confianza.
+   - (b) **EV > 0** tras quitar el margen.
+6. **Filtro de cuota mínima 1.40**: descartar cualquier candidato con cuota < 1.40 ANTES de
+   ordenar. Configurable (MIN_ODDS=1.40). Stake = ¼ Kelly con tope 5% (§5).
+7. **Clasificar por confianza** cada recomendación: **Alta / Media** según `model_prob` y el
+   margen de EV. Guardar en `predictions.confidence` y mostrarlo en la UI.
+8. **No forzar 2.** Seleccionar hasta 2 candidatos que pasen 5–6, ordenados por confianza/EV.
+   Si **ninguno** cumple, mostrar **"Sin apuesta de valor en este partido"** (0 recomendaciones).
+   Nunca inventar una mala apuesta.
+9. **Transparencia en la UI**: mostrar la **probabilidad real estimada por el modelo**, la **cuota**,
+   el **EV%** y un **recordatorio de que ninguna apuesta es segura**.
+10. Registrar CLV (cuota apostada vs cierre) como métrica de habilidad real.
 
 ---
 
@@ -193,12 +209,14 @@ La liquidación de apuestas es automática al cerrarse el partido (ver §5.2), n
 5. models/dixon_coles.py (con time-decay, scipy).
 6. models/elo_model.py + ingest de Elo.
 7. models/ensemble.py + validación/backtest.
-8. ingest/odds_api.py + value/devig.py + value/ev.py (filtro 1.40).
+8. ingest/odds_api.py + value/devig.py + value/ev.py (doble filtro confianza+EV, cuota 1.40; §4).
 9. bankroll/kelly.py.
 10. chat/ (WebSocket).
 11. api/main.py + frontend (PWA Next.js, mobile-only; ver DESIGN.md). Empezar por la pantalla
     de detalle de partido.
-12. scheduler/daily_refresh.py (refresco de datos + liquidación + disparo de notificaciones).
+12. scheduler/daily_refresh.py (pasada de la mañana: análisis de los partidos del día +
+    liquidación + push) y scheduler/pre_match_refresh.py (pasada final ~2h y ~1h antes:
+    alineaciones/lesiones + cuotas frescas + recálculo). Ver §11. Opcional: ingest/api_football.py.
 13. notifications/push.py (Web Push) + tabla push_subscriptions + endpoints /push/* +
     service worker en el front. Integrado con el scheduler (ver §10).
 
@@ -239,3 +257,35 @@ pytest en cada fase. Commit al cerrar cada fase.
   ⚽ En 1 hora: [Local] vs [Visitante]
   Apuesta recomendada: [outcome] @[cuota] — stake sugerido: X€
   ```
+
+---
+
+## 11. Análisis solo el día del partido (ciclo de vida)
+
+El análisis de cada partido se genera **automáticamente el día en que se juega, no antes**.
+Lo orquesta el scheduler leyendo `matches.utc_date`.
+
+### 11.1 Ciclo de vida (estado visible en la UI)
+`pendiente → analizado → en vivo → finalizado`. Se deriva de (`matches.status`, `analysis_status`):
+- **pendiente**: aún no es el día del partido. `analysis_status=pending`. En la lista aparece con
+  la etiqueta **"Análisis pendiente — se generará el día del partido"** (sin picks).
+- **analizado**: es el día del partido y ya hay análisis. `analysis_status=analyzed`.
+- **en vivo**: `status=live`.
+- **finalizado**: `status=finished` (con liquidación automática, §5.2).
+
+### 11.2 Dos pasadas el día del partido
+Para cada partido que se juega **hoy**:
+1. **Pasada de la mañana** (`scheduler/daily_refresh.py`): análisis completo con los datos más
+   frescos disponibles (forma reciente, Elo actualizado, fuerzas del modelo, probabilidades,
+   cuotas, EV, stake). `analysis_status=analyzed`, `analysis_stage=preliminary`, `analyzed_at=now`.
+2. **Pasada final** (`scheduler/pre_match_refresh.py`, ~2h y ~1h antes del pitido): alineaciones
+   confirmadas y bajas/lesiones de última hora (API-Football, cacheado por el límite 100/día) +
+   cuotas más recientes; **recalcula todo**. `analysis_stage=final`. Si la recomendación cambia,
+   actualiza la apuesta mostrada y la **notificación de "1h antes"** (§10).
+
+Cada análisis se guarda con timestamp (`analyzed_at`). La UI muestra **"Actualizado hace X min"**
+y si el análisis es **preliminar** o **final**.
+
+### 11.3 Selección conservadora
+El análisis aplica el doble filtro de §4 (confianza ≥ MIN_CONFIDENCE **y** EV>0, cuota ≥ 1.40).
+Si ningún mercado lo cumple, el partido queda **analizado pero "Sin apuesta de valor"** (0 picks).
