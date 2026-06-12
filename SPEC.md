@@ -39,9 +39,11 @@ Regla: toda respuesta de API se cachea en SQLite. Nunca llamar en cada request.
 ## 2. Modelo de datos (SQLite)
 
 ```sql
-teams(id PK, name, fifa_code, elo REAL, confederation, is_host BOOL)
-matches(id PK, utc_date, home_id FK, away_id FK, group_label, stage,
+teams(id PK, external_id UNIQUE, name, fifa_code, elo REAL, confederation, is_host BOOL)
+matches(id PK, external_id UNIQUE, utc_date, home_id FK NULL, away_id FK NULL, group_label, stage,
         neutral_venue BOOL, home_goals, away_goals, status)   -- stage: group|R32|R16|QF|SF|3RD|F
+        -- external_id: id de football-data (upsert idempotente). home/away NULL en eliminatorias
+        -- aún sin definir (no se analizan hasta confirmarse).
 odds(id PK, match_id FK, bookmaker, market, outcome, price REAL, captured_at)
 predictions(id PK, match_id FK, market, outcome, model_prob REAL, fair_prob REAL,
             offered_odds REAL, ev REAL, recommended_stake REAL, rank INT, created_at)
@@ -55,6 +57,7 @@ bets(id PK, user_id FK, match_id FK, prediction_id FK, market, outcome,
      placed_at, settled_at)   -- status: open|won|lost|void. Una fila por usuario y apuesta.
 balance_ledger(id PK, user_id FK, bet_id FK, delta REAL, balance_after REAL, created_at)
 push_subscriptions(id PK, user_id FK, endpoint, p256dh, auth, created_at)  -- Web Push (una por dispositivo)
+api_cache(id PK, source, cache_key UNIQUE, response_json, fetched_at, expires_at)  -- caché HTTP (TTL)
 ```
 
 ---

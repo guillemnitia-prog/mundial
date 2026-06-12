@@ -46,6 +46,7 @@ class Team(Base):
     __tablename__ = "teams"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    external_id: Mapped[int | None] = mapped_column(Integer, unique=True, index=True)  # id football-data
     name: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     fifa_code: Mapped[str | None] = mapped_column(String, index=True)
     elo: Mapped[float | None] = mapped_column(Float)  # Elo de eloratings.net (selecciones)
@@ -58,9 +59,11 @@ class Match(Base):
     __tablename__ = "matches"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    external_id: Mapped[int | None] = mapped_column(Integer, unique=True, index=True)  # id football-data
     utc_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
-    home_id: Mapped[int] = mapped_column(ForeignKey("teams.id"), nullable=False)
-    away_id: Mapped[int] = mapped_column(ForeignKey("teams.id"), nullable=False)
+    # Nullable: las eliminatorias aún sin definir no tienen rivales (no se analizan hasta confirmarse).
+    home_id: Mapped[int | None] = mapped_column(ForeignKey("teams.id"))
+    away_id: Mapped[int | None] = mapped_column(ForeignKey("teams.id"))
     group_label: Mapped[str | None] = mapped_column(String)  # A..L (fase de grupos)
     stage: Mapped[str] = mapped_column(String, nullable=False, default="group")
     neutral_venue: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
@@ -186,3 +189,22 @@ class BalanceLedger(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=_utcnow
     )
+
+
+class ApiCache(Base):
+    """Caché de respuestas HTTP crudas (SPEC §1: cachear TODO, nunca llamar en cada request).
+
+    Reutilizable por todos los clientes de ingest. `cache_key` identifica unívocamente la petición
+    (source + path + params); `expires_at` controla el TTL.
+    """
+
+    __tablename__ = "api_cache"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    source: Mapped[str] = mapped_column(String, nullable=False)  # p.ej. "football-data"
+    cache_key: Mapped[str] = mapped_column(String, nullable=False, unique=True, index=True)
+    response_json: Mapped[str] = mapped_column(String, nullable=False)
+    fetched_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_utcnow
+    )
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

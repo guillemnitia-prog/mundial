@@ -77,6 +77,8 @@ class Settings:
     # --- Datos ---
     database_url: str = "sqlite:///data/worldcup.db"
     odds_region: str = "eu"  # The Odds API no tiene región ES; eu como proxy
+    football_data_base_url: str = "https://api.football-data.org/v4"
+    football_data_competition: str = "WC"  # FIFA World Cup
 
     @classmethod
     def load(cls) -> "Settings":
@@ -101,6 +103,8 @@ class Settings:
             group_bankroll=_get_float("GROUP_BANKROLL", 350.0),
             database_url=_get_str("DATABASE_URL", "sqlite:///data/worldcup.db"),
             odds_region=_get_str("ODDS_REGION", "eu"),
+            football_data_base_url=_get_str("FOOTBALL_DATA_BASE_URL", "https://api.football-data.org/v4"),
+            football_data_competition=_get_str("FOOTBALL_DATA_COMPETITION", "WC"),
         )
 
 
