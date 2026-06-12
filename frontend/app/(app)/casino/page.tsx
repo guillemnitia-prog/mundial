@@ -1,6 +1,9 @@
 "use client";
+import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 
 export default function CasinoPage() {
+  const router = useRouter();
   return (
     <div>
       <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-[#14513c] px-4 py-3"
@@ -24,23 +27,25 @@ export default function CasinoPage() {
           </div>
         </div>
 
-        {/* Slots — próximamente */}
-        <div className="mb-5 w-full rounded-card border border-border bg-surface p-5">
+        {/* Slots Tropical — JUGABLE */}
+        <motion.button whileTap={{ scale: 0.99 }} onClick={() => router.push("/casino/slots")}
+          className="mb-5 w-full rounded-card border p-5 text-left"
+          style={{ borderColor: "#FFB300", background: "linear-gradient(135deg,#0e3b4e,#0c2a20)" }}>
           <div className="flex items-center gap-3">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full" style={{ background: "#FFB30022", color: "#FFB300" }}>
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M8 9v6M12 9v6M16 9v6" /></svg>
+            <div className="flex h-14 w-14 items-center justify-center rounded-full text-2xl" style={{ background: "#FFB30022" }}>
+              🍒
             </div>
             <div className="flex-1">
-              <div className="text-base font-semibold">Slots</div>
-              <div className="text-xs text-muted">Tira y a ver qué sale.</div>
+              <div className="text-base font-semibold">Slots Tropical</div>
+              <div className="text-xs text-muted">3 rodillos, frutas y diamantes. Hasta x1000.</div>
             </div>
-            <span className="rounded-full px-3 py-1 text-[11px] font-medium" style={{ background: "var(--accent-faint)", color: "var(--accent)" }}>Próximamente</span>
+            <span className="rounded-full px-3 py-1.5 text-sm font-semibold" style={{ background: "var(--accent)", color: "#0A1712" }}>Jugar →</span>
           </div>
-        </div>
+        </motion.button>
 
         <div className="rounded-card border border-[#14513c] p-5 text-center" style={{ background: "#0c2a20" }}>
           <div className="text-lg font-semibold" style={{ color: "#FFB300" }}>Más juegos, próximamente chavales</div>
-          <p className="mx-auto mt-1 max-w-[260px] text-sm text-muted">Seguimos montando el casino. ¡La ruleta ya está casi lista!</p>
+          <p className="mx-auto mt-1 max-w-[260px] text-sm text-muted">¡Las slots ya están listas! La ruleta, casi lista.</p>
         </div>
 
         <p className="mt-6 px-1 text-[11px] leading-relaxed text-[#737373]">
