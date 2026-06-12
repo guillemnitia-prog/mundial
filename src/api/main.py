@@ -12,6 +12,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.api.bets import router as bets_router
+from src.api.casino import router as casino_router
 from src.auth.onboarding import router as onboarding_router
 from src.auth.router import router as auth_router
 from src.api.push import router as push_router
@@ -48,6 +49,7 @@ def create_app() -> FastAPI:
     app.include_router(chat_router)
     app.include_router(views_router)
     app.include_router(push_router)
+    app.include_router(casino_router)
 
     @app.get("/health", tags=["meta"])
     def health() -> dict:
