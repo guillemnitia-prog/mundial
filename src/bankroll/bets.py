@@ -14,6 +14,7 @@ from __future__ import annotations
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from src.bankroll import kelly
 from src.config import settings
 from src.db.schema import Bet, Match, Prediction, User
 
@@ -27,12 +28,13 @@ class BettingError(Exception):
 
 
 def recommended_eur(user: User, prediction: Prediction) -> float:
-    """Importe recomendado en € para este usuario: saldo · fracción ¼ Kelly (rellena Kelly, Fase 9).
+    """Importe recomendado en € para este usuario (¼ Kelly sobre su saldo, con halving).
 
-    `prediction.recommended_stake` es la fracción del saldo (con tope 5%). Si es None → 0.
+    `prediction.recommended_stake` es la fracción del saldo (¼ Kelly con tope 5%, la rellena
+    bankroll/kelly.py). El € se calcula por usuario sobre su saldo actual. Si es None → 0.
     """
     frac = prediction.recommended_stake or 0.0
-    return round(user.balance * frac, 2)
+    return kelly.user_stake(user.balance, frac)["eur"]
 
 
 def _get_bet(db: Session, user_id: int, prediction_id: int) -> Bet | None:
