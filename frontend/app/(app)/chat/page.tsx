@@ -14,8 +14,11 @@ export default function ChatPage() {
 
   useEffect(() => {
     api.get<Me>("/auth/me").then((m) => setMe(m.username)).catch(() => {});
-    const wsUrl = API_BASE.replace(/^http/, "ws") + "/ws/chat";
-    const ws = new WebSocket(wsUrl);
+    // Si API_BASE es absoluto (http...), úsalo; si es relativo (/api, proxy), va sobre el host actual.
+    const wsBase = API_BASE.startsWith("http")
+      ? API_BASE.replace(/^http/, "ws")
+      : `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}${API_BASE}`;
+    const ws = new WebSocket(`${wsBase}/ws/chat`);
     wsRef.current = ws;
     ws.onopen = () => setConnected(true);
     ws.onclose = () => setConnected(false);
