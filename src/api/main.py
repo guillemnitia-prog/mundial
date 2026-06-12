@@ -14,6 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.api.bets import router as bets_router
 from src.auth.onboarding import router as onboarding_router
 from src.auth.router import router as auth_router
+from src.api.views import router as views_router
 from src.chat.routes import router as chat_router
 from src.config import settings
 from src.db.session import init_db
@@ -41,6 +42,7 @@ def create_app() -> FastAPI:
     app.include_router(onboarding_router)
     app.include_router(bets_router)
     app.include_router(chat_router)
+    app.include_router(views_router)
 
     @app.get("/health", tags=["meta"])
     def health() -> dict:
