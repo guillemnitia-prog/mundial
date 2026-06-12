@@ -20,6 +20,7 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     String,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -34,6 +35,8 @@ MATCH_STAGES = ("group", "R32", "R16", "QF", "SF", "3RD", "F")
 MATCH_STATUSES = ("scheduled", "live", "finished", "postponed", "cancelled")
 ANALYSIS_STATUSES = ("pending", "analyzed")  # el análisis se genera el día del partido
 CONFIDENCE_LEVELS = ("alta", "media")        # nivel de confianza de una recomendación
+# Decisión del usuario sobre una recomendación (por_defecto = no interactuó → apuesta lo recomendado).
+BET_DECISIONS = ("recommended", "modified", "rejected", "default")
 USER_ROLES = ("admin", "member")
 BET_STATUSES = ("open", "won", "lost", "void")
 
@@ -176,8 +179,11 @@ class Bet(Base):
     prediction_id: Mapped[int | None] = mapped_column(ForeignKey("predictions.id"))
     market: Mapped[str] = mapped_column(String, nullable=False)
     outcome: Mapped[str] = mapped_column(String, nullable=False)
-    stake: Mapped[float] = mapped_column(Float, nullable=False)  # € apostados (sobre su saldo)
+    stake: Mapped[float] = mapped_column(Float, nullable=False)  # importe EFECTIVO en € (manda en liquidación)
     odds: Mapped[float] = mapped_column(Float, nullable=False)   # cuota tomada
+    # Decisión del usuario sobre la recomendación (por_defecto = no interactuó).
+    decision: Mapped[str] = mapped_column(String, nullable=False, default="default")
+    recommended_stake: Mapped[float | None] = mapped_column(Float)  # snapshot del € recomendado al decidir
     status: Mapped[str] = mapped_column(String, nullable=False, default="open")
     result: Mapped[str | None] = mapped_column(String)
     pnl: Mapped[float | None] = mapped_column(Float)
@@ -187,7 +193,11 @@ class Bet(Base):
     )
     settled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
-    __table_args__ = (CheckConstraint(f"status IN {BET_STATUSES}", name="ck_bets_status"),)
+    __table_args__ = (
+        CheckConstraint(f"status IN {BET_STATUSES}", name="ck_bets_status"),
+        CheckConstraint(f"decision IN {BET_DECISIONS}", name="ck_bets_decision"),
+        UniqueConstraint("user_id", "prediction_id", name="uq_bets_user_prediction"),
+    )
 
 
 class BalanceLedger(Base):

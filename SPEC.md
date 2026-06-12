@@ -57,8 +57,9 @@ champion_picks(user_id PK FK, team_id FK, created_at)   -- inmutable
 chat_messages(id PK, user_id FK, content, created_at)
 -- NO hay bote común: cada usuario tiene su propio saldo (users.balance) y su propio historial.
 bets(id PK, user_id FK, match_id FK, prediction_id FK, market, outcome,
-     stake REAL, odds REAL, status, result, pnl REAL, clv REAL,
-     placed_at, settled_at)   -- status: open|won|lost|void. Una fila por usuario y apuesta.
+     stake REAL, odds REAL, decision, recommended_stake REAL, status, result, pnl REAL, clv REAL,
+     placed_at, settled_at)   -- status: open|won|lost|void. UNIQUE(user_id,prediction_id).
+     -- stake = importe EFECTIVO. decision: recommended|modified|rejected|default (§5.3).
 balance_ledger(id PK, user_id FK, bet_id FK, delta REAL, balance_after REAL, created_at)
 push_subscriptions(id PK, user_id FK, endpoint, p256dh, auth, created_at)  -- Web Push (una por dispositivo)
 api_cache(id PK, source, cache_key UNIQUE, response_json, fetched_at, expires_at)  -- caché HTTP (TTL)
@@ -146,7 +147,30 @@ virtuales (`users.balance DEFAULT 50.0`). Son 7 saldos independientes. Cada usua
   - **pierde** → `balance −= stake`, `pnl = −stake`, `status=lost`.
   - **anulada** → `status=void`, `pnl=0`, devolver stake si procede.
 - Registrar cada movimiento en `balance_ledger` (delta + balance_after).
+- La liquidación usa SIEMPRE el **importe efectivo** de cada usuario (§5.3), no el recomendado.
 - Cada usuario ve su saldo, su historial de apuestas y un **ranking del grupo por saldo**.
+
+### 5.3 Decisión de apuesta por usuario
+Sobre cada recomendación, cada usuario tiene cuatro caminos (`bets.decision`):
+- **Aceptar** (`recommended`): apuesta con el importe recomendado.
+- **Rechazar** (`rejected`): no apuesta; no afecta al saldo (`status=void`, queda fuera).
+- **Cambiar importe** (`modified`): acepta con su propio importe. Validar
+  **MIN_STAKE_EUR ≤ importe ≤ saldo actual**; si no, no permitir confirmar.
+- **No hacer nada** (`default`): cuenta como apuesta con el importe recomendado (el comportamiento
+  por defecto es apostar lo recomendado salvo rechazo explícito).
+
+Reglas:
+- **Importe efectivo** = recomendado (aceptar / no hacer nada) o personalizado (cambiar importe).
+  Se guarda en `bets.stake` de cada usuario; `bets.recommended_stake` guarda el € recomendado.
+- Como cada usuario puede tener un importe distinto en la misma apuesta, el PnL se calcula
+  **individualmente** en la liquidación (§5.2) con el importe efectivo.
+- Estados: `recommended | modified | rejected | default` → tras el partido pasan a `won/lost`
+  (las `rejected` quedan fuera).
+- **Lock al inicio**: hasta que el partido empieza (`status=scheduled`) el usuario puede cambiar su
+  decisión; al pasar a `live` queda **bloqueada** (lo que haya entonces cuenta, incluido `default`).
+  El scheduler materializa los `default` (de quienes no interactuaron) al bloquear (Fase 12).
+- UI (detalle de partido, móvil): botones **Aceptar / Rechazar / Cambiar importe**; este último abre
+  un **bottom-sheet** con importe, beneficio potencial en vivo y % del saldo, y botón Confirmar.
 
 ---
 
@@ -180,7 +204,8 @@ virtuales (`users.balance DEFAULT 50.0`). Son 7 saldos independientes. Cada usua
 - GET  /champion-picks
 - GET  /me/balance  (saldo actual + historial de apuestas del usuario)
 - GET  /ranking  (ranking del grupo por saldo)
-- POST /bets  (aceptar una recomendación: crea bet con stake individual; "saltar" no crea fila)
+- POST /predictions/{id}/decision  (decisión del usuario: accept|reject|modify [+amount]; §5.3)
+- GET  /me/bets  (historial de apuestas del usuario)
 - GET  /push/vapid-public-key  (clave pública VAPID para suscribir el navegador)
 - POST /push/subscribe  (guarda endpoint+p256dh+auth en push_subscriptions; tras el onboarding)
 - WS   /ws/chat

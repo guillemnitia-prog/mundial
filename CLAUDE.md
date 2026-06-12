@@ -27,7 +27,8 @@ Lee SPEC.md para la especificación completa antes de implementar cualquier mód
 - models/   → dixon_coles.py, elo_model.py, ensemble.py  (EL MODELO VIVE AQUÍ)
 - value/    → devig.py (quita margen) + ev.py (doble filtro: model_prob>=MIN_CONFIDENCE y EV>0;
               cuota>=1.40; clasifica confianza alta/media; no fuerza 2)
-- bankroll/ → kelly.py (1/4 Kelly sobre saldo individual) + settle.py (liquidación + balance_ledger)
+- bankroll/ → kelly.py (1/4 Kelly sobre saldo individual) + bets.py (decisión accept/reject/modify/
+              default por usuario) + settle.py (liquidación por importe efectivo + balance_ledger)
 - auth/     → users.py (hash/login), onboarding.py (pregunta campeón), seed_users.py
 - chat/     → manager.py (ConnectionManager/broadcast) + routes.py (/ws/chat)
 - notifications/ → push.py (Web Push con pywebpush; lo dispara el scheduler) + endpoints /push/*
@@ -58,9 +59,15 @@ Lee SPEC.md para la especificación completa antes de implementar cualquier mód
 - Stake = 1/4 Kelly sobre el saldo del usuario (stake = saldo·(f/4)), nunca >5% del saldo.
   No apostar si EV<=0. Si el stake sale <1 € (o < mínimo de la casa): "demasiado pequeña,
   no apostar". Nunca todo el saldo en un partido. Devolver stake en € y en % del saldo.
-- Cada usuario acepta ("apostar") o se salta ("saltar") cada recomendación; el saldo refleja
-  solo lo apostado. Liquidación AUTOMÁTICA al terminar el partido (gana: balance+=stake·(odds−1);
-  pierde: balance−=stake), registrando cada movimiento en balance_ledger. Ranking de grupo por saldo.
+- DECISIÓN por usuario sobre cada recomendación (bets.decision): aceptar (recommended),
+  rechazar (rejected, fuera), cambiar importe (modified; validar MIN_STAKE_EUR<=importe<=saldo),
+  o no interactuar (default = apostar lo recomendado salvo rechazo explícito). El importe EFECTIVO
+  (bets.stake) manda y es individual. Editable hasta el inicio; al pasar a 'live' queda bloqueada
+  (el scheduler materializa los 'default' al bloquear). UI: botones Aceptar/Rechazar/Cambiar importe
+  (bottom-sheet con beneficio potencial y % del saldo).
+- Liquidación AUTOMÁTICA al terminar el partido con el IMPORTE EFECTIVO de cada usuario
+  (gana: balance+=stake·(odds−1); pierde: balance−=stake), registrando cada movimiento en
+  balance_ledger. Idempotente. Ranking de grupo por saldo.
 - Cachea TODO en SQLite. Respeta límites: football-data 10 req/min,
   The Odds API 500 créditos/mes. Nunca llamar APIs en cada request.
 - Bet365.es/Sportium NO tienen API: usa cuotas region=eu como proxy y AVISA de la diferencia.

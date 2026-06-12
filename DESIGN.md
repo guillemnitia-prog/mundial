@@ -54,8 +54,12 @@ Paleta base: **negro y verde**.
   para saldos, cuotas, EV, stakes y stats — que no "bailen" al actualizarse.
 
 ## 4. Pantallas — 4 tabs en la bottom bar fija
-1. **Partidos** (lista, pull-to-refresh) → **Detalle de partido** (análisis + 2 picks, botones
-   apostar/saltar). Pantalla pivote del diseño.
+1. **Partidos** (lista, pull-to-refresh) → **Detalle de partido** (análisis + hasta 2 picks).
+   Pantalla pivote del diseño. Por cada recomendación, botones **Aceptar / Rechazar / Cambiar
+   importe** (ergonomía de pulgar, mitad inferior). "Cambiar importe" abre un **bottom-sheet** con
+   campo de importe, **beneficio potencial en vivo** y **% del saldo**, y botón **Confirmar**
+   (valida MIN_STAKE_EUR ≤ importe ≤ saldo). Editable hasta el inicio; al empezar, decisión
+   bloqueada. Si no hay value: "Sin apuesta de valor en este partido". Ver SPEC §5.3.
 2. **Mi saldo** (saldo individual + historial + aceptar/saltar apuestas).
 3. **Ranking** (grupo por saldo). La **Quiniela de campeón** (picks de los 7) vive como
    sub-pantalla aquí (o cabecera), no como tab propia.
