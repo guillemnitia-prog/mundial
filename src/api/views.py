@@ -25,13 +25,24 @@ _fd_client = FootballDataClient()
 
 
 def _maybe_refresh_live(db: Session, match: Match) -> None:
-    """Refresca el marcador en vivo desde football-data si el partido está en su ventana de juego."""
+    """Refresca el marcador en vivo desde football-data si el partido está en su ventana de juego.
+
+    Si el partido acaba de terminar, LIQUIDA al instante las apuestas (no espera al cron).
+    """
     if match.status == "finished" or match.utc_date is None:
         return
     now = datetime.now(timezone.utc)
     kickoff = match.utc_date if match.utc_date.tzinfo else match.utc_date.replace(tzinfo=timezone.utc)
-    if kickoff <= now <= kickoff + timedelta(hours=3):  # ~ventana de un partido
-        _fd_client.refresh_match(db, match)
+    if not (kickoff <= now <= kickoff + timedelta(hours=3)):  # ~ventana de un partido
+        return
+    _fd_client.refresh_match(db, match)
+    # ¿Acaba de terminar? Liquida sus apuestas ya (idempotente).
+    if match.status == "finished" and match.home_goals is not None and match.away_goals is not None:
+        try:
+            from src.bankroll.settle import settle_match
+            settle_match(db, match)
+        except Exception:
+            pass
 
 router = APIRouter(tags=["views"])
 
