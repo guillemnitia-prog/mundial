@@ -36,11 +36,21 @@ def _maybe_refresh_live(db: Session, match: Match) -> None:
     if not (kickoff <= now <= kickoff + timedelta(hours=3)):  # ~ventana de un partido
         return
     _fd_client.refresh_match(db, match)
-    # ¿Acaba de terminar? Liquida sus apuestas ya (idempotente).
+    # ¿Acaba de terminar? Liquida sus apuestas ya (idempotente) y notifica ganó/perdió.
     if match.status == "finished" and match.home_goals is not None and match.away_goals is not None:
         try:
             from src.bankroll.settle import settle_match
-            settle_match(db, match)
+            from src.notifications import events as notify
+            to_settle = db.execute(
+                select(Bet).where(Bet.match_id == match.id, Bet.status == "open", Bet.decision != "rejected")
+            ).scalars().all()
+            if to_settle:
+                settle_match(db, match)
+                payloads = []
+                for b in to_settle:
+                    db.refresh(b)
+                    payloads.append(notify.settlement_message(db, db.get(User, b.user_id), b, match))
+                notify.dispatch(payloads, db)
         except Exception:
             pass
 

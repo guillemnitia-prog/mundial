@@ -80,6 +80,16 @@ def send_to_all(db: Session, payload: dict) -> int:
     return _send_to_subs(db, subs, payload)
 
 
+def send_to_others(db: Session, exclude_user_id: int, payload: dict) -> int:
+    """Envía a todas las suscripciones MENOS las del usuario indicado (p.ej. el remitente del chat)."""
+    if not push_enabled():
+        return 0
+    subs = db.execute(
+        select(PushSubscription).where(PushSubscription.user_id != exclude_user_id)
+    ).scalars().all()
+    return _send_to_subs(db, subs, payload)
+
+
 def generate_vapid_keys() -> dict:
     """Genera un par de claves VAPID (application server keys) para pegar en .env."""
     from py_vapid import Vapid

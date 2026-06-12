@@ -74,5 +74,25 @@ async def chat_ws(websocket: WebSocket, db: Session = Depends(get_db)):
                 "content": content,
                 "created_at": msg.created_at.isoformat(),
             })
+            # Push a los demás (los que no están mirando el chat). En un hilo aparte con su
+            # propia sesión, para no bloquear el WebSocket.
+            await _push_chat(user.id, user.username, content)
     except WebSocketDisconnect:
         manager.disconnect(websocket)
+
+
+async def _push_chat(sender_id: int, sender_name: str, content: str) -> None:
+    import asyncio
+
+    def work():
+        from src.db.session import SessionLocal
+        from src.notifications import push
+        with SessionLocal() as s:
+            push.send_to_others(s, sender_id, {
+                "title": f"💬 {sender_name}", "body": content[:120], "url": "/chat",
+            })
+
+    try:
+        await asyncio.to_thread(work)
+    except Exception:
+        pass
