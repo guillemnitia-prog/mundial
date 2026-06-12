@@ -230,3 +230,22 @@ class ApiCache(Base):
         DateTime(timezone=True), nullable=False, default=_utcnow
     )
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ApiUsage(Base):
+    """Contador mensual de créditos de API (p.ej. The Odds API, 500/mes).
+
+    Corta antes de exceder el presupuesto. `period` en formato 'YYYY-MM'.
+    """
+
+    __tablename__ = "api_usage"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    source: Mapped[str] = mapped_column(String, nullable=False)
+    period: Mapped[str] = mapped_column(String, nullable=False)  # 'YYYY-MM'
+    credits_used: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_utcnow
+    )
+
+    __table_args__ = (UniqueConstraint("source", "period", name="uq_api_usage_source_period"),)

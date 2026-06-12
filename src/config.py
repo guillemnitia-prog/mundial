@@ -79,6 +79,10 @@ class Settings:
     # --- Datos ---
     database_url: str = "sqlite:///data/worldcup.db"
     odds_region: str = "eu"  # The Odds API no tiene región ES; eu como proxy
+    odds_api_base_url: str = "https://api.the-odds-api.com/v4"
+    odds_sport: str = "soccer_fifa_world_cup"
+    odds_markets: str = "h2h,totals,spreads"
+    odds_monthly_budget: int = 500  # créditos/mes de The Odds API (free)
     football_data_base_url: str = "https://api.football-data.org/v4"
     football_data_competition: str = "WC"  # FIFA World Cup
     eloratings_url: str = "https://www.eloratings.net/World.tsv"  # Elo de selecciones
@@ -113,6 +117,10 @@ class Settings:
             group_bankroll=_get_float("GROUP_BANKROLL", 350.0),
             database_url=_get_str("DATABASE_URL", "sqlite:///data/worldcup.db"),
             odds_region=_get_str("ODDS_REGION", "eu"),
+            odds_api_base_url=_get_str("ODDS_API_BASE_URL", "https://api.the-odds-api.com/v4"),
+            odds_sport=_get_str("ODDS_SPORT", "soccer_fifa_world_cup"),
+            odds_markets=_get_str("ODDS_MARKETS", "h2h,totals,spreads"),
+            odds_monthly_budget=_get_int("ODDS_MONTHLY_BUDGET", 500),
             football_data_base_url=_get_str("FOOTBALL_DATA_BASE_URL", "https://api.football-data.org/v4"),
             football_data_competition=_get_str("FOOTBALL_DATA_COMPETITION", "WC"),
             eloratings_url=_get_str("ELORATINGS_URL", "https://www.eloratings.net/World.tsv"),
