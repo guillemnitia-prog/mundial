@@ -28,7 +28,8 @@ Lee SPEC.md para la especificación completa antes de implementar cualquier mód
 - bankroll/ → kelly.py (1/4 Kelly sobre saldo individual) + settle.py (liquidación + balance_ledger)
 - auth/     → users.py (hash/login), onboarding.py (pregunta campeón), seed_users.py
 - chat/     → manager.py (ConnectionManager/broadcast) + routes.py (/ws/chat)
-- db/       → schema.py (SQLite; users.balance, bets por usuario, balance_ledger)
+- notifications/ → push.py (Web Push con pywebpush; lo dispara el scheduler) + endpoints /push/*
+- db/       → schema.py (SQLite; users.balance, bets por usuario, balance_ledger, push_subscriptions)
 - api/      → main.py (endpoints FastAPI)
 - scheduler/→ daily_refresh.py
 

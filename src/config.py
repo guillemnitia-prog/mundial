@@ -54,6 +54,11 @@ class Settings:
     oddspapi_key: str = ""
     api_football_key: str = ""
 
+    # --- Notificaciones push (VAPID) ---
+    vapid_public_key: str = ""
+    vapid_private_key: str = ""
+    vapid_subject: str = "mailto:admin@example.com"
+
     # --- Auth ---
     jwt_secret: str = ""
     jwt_algorithm: str = "HS256"
@@ -80,6 +85,9 @@ class Settings:
             odds_api_key=_get_str("ODDS_API_KEY", ""),
             oddspapi_key=_get_str("ODDSPAPI_KEY", ""),
             api_football_key=_get_str("API_FOOTBALL_KEY", ""),
+            vapid_public_key=_get_str("VAPID_PUBLIC_KEY", ""),
+            vapid_private_key=_get_str("VAPID_PRIVATE_KEY", ""),
+            vapid_subject=_get_str("VAPID_SUBJECT", "mailto:admin@example.com"),
             jwt_secret=_get_str("JWT_SECRET", ""),
             jwt_algorithm=_get_str("JWT_ALGORITHM", "HS256"),
             jwt_expire_minutes=_get_int("JWT_EXPIRE_MINUTES", 10080),

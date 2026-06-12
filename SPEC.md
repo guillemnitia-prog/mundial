@@ -54,6 +54,7 @@ bets(id PK, user_id FK, match_id FK, prediction_id FK, market, outcome,
      stake REAL, odds REAL, status, result, pnl REAL, clv REAL,
      placed_at, settled_at)   -- status: open|won|lost|void. Una fila por usuario y apuesta.
 balance_ledger(id PK, user_id FK, bet_id FK, delta REAL, balance_after REAL, created_at)
+push_subscriptions(id PK, user_id FK, endpoint, p256dh, auth, created_at)  -- Web Push (una por dispositivo)
 ```
 
 ---
@@ -161,6 +162,8 @@ virtuales (`users.balance DEFAULT 50.0`). Son 7 saldos independientes. Cada usua
 - GET  /me/balance  (saldo actual + historial de apuestas del usuario)
 - GET  /ranking  (ranking del grupo por saldo)
 - POST /bets  (aceptar una recomendación: crea bet con stake individual; "saltar" no crea fila)
+- GET  /push/vapid-public-key  (clave pública VAPID para suscribir el navegador)
+- POST /push/subscribe  (guarda endpoint+p256dh+auth en push_subscriptions; tras el onboarding)
 - WS   /ws/chat
 
 La liquidación de apuestas es automática al cerrarse el partido (ver §5.2), no manual.
@@ -190,7 +193,46 @@ La liquidación de apuestas es automática al cerrarse el partido (ver §5.2), n
 8. ingest/odds_api.py + value/devig.py + value/ev.py (filtro 1.40).
 9. bankroll/kelly.py.
 10. chat/ (WebSocket).
-11. api/main.py + frontend mínimo.
-12. scheduler/daily_refresh.py.
+11. api/main.py + frontend (PWA Next.js, mobile-only; ver DESIGN.md). Empezar por la pantalla
+    de detalle de partido.
+12. scheduler/daily_refresh.py (refresco de datos + liquidación + disparo de notificaciones).
+13. notifications/push.py (Web Push) + tabla push_subscriptions + endpoints /push/* +
+    service worker en el front. Integrado con el scheduler (ver §10).
 
 pytest en cada fase. Commit al cerrar cada fase.
+
+---
+
+## 10. Notificaciones push (Web Push)
+
+- **Tecnología:** Web Push API (service worker + Push API). Funciona en **iPhone desde iOS 16.4**
+  con la PWA **instalada** en pantalla de inicio.
+- **Permiso:** pedirlo **tras el onboarding**, no al abrir la app.
+- **Persistencia:** tabla `push_subscriptions(id, user_id, endpoint, p256dh, auth, created_at)`.
+- **Backend:** módulo `notifications/push.py` con la librería **`pywebpush`**. Claves
+  `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` en `.env` (generar con pywebpush en el setup).
+- **Frontend:** service worker en `/public/sw.js` con listener del evento `push`.
+
+### 10.1 Disparadores (los ejecuta el scheduler)
+- **Tras liquidar** un partido terminado: push personalizada a **cada usuario con apuesta abierta**
+  en ese partido (ganada/perdida).
+- **1 hora antes** de cada partido: aviso con la **apuesta recomendada** para ese partido.
+
+### 10.2 Plantillas de contenido
+- **Ganó:**
+  ```
+  🟢 ¡Apuesta ganada! [Local] vs [Visitante]
+  Apostaste X€ a [outcome] @[cuota] → +Y€
+  Saldo actual: Z€
+  ```
+- **Perdió:**
+  ```
+  🔴 Apuesta perdida — [Local] vs [Visitante]
+  Apostaste X€ a [outcome] @[cuota] → -X€
+  Saldo actual: Z€
+  ```
+- **1h antes:**
+  ```
+  ⚽ En 1 hora: [Local] vs [Visitante]
+  Apuesta recomendada: [outcome] @[cuota] — stake sugerido: X€
+  ```
