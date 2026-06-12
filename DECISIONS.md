@@ -7,10 +7,14 @@ CLAUDE.md** mandan. Fecha: 2026-06-12.
 ---
 
 ## 1. Frontend
-- **Jinja2 + HTMX** servido por el propio FastAPI. Un único despliegue, sin SPA.
-- Justificación: 7 usuarios, auth por cookie httpOnly y chat WebSocket nativos y triviales
-  en server-rendered. Streamlit queda como sandbox interno del modelo si hace falta; Next.js
-  descartado por sobredimensionado (migrable en el futuro).
+> **Actualizado (brief visual del usuario):** se cambia a **Next.js PWA (React)**. El brief de
+> `DESIGN.md` (PWA instalable, Framer Motion, bottom-sheets, componentes de 21st.dev Magic) es
+> React puro e incompatible con Jinja2+HTMX. Ver `DESIGN.md` para tokens y plataforma.
+- **Next.js (App Router) + React + TypeScript + Tailwind + Framer Motion**, PWA instalable
+  (mobile-only, 375–430 px). Componentes principales vía MCP 21st.dev Magic, re-tematizados.
+- **FastAPI = API JSON pura** (no renderiza HTML). Auth JWT en cookie httpOnly; CORS con
+  credenciales para el front. Chat por WebSocket sigue en FastAPI.
+- (Histórico) Jinja2+HTMX fue la elección inicial de Fase 0; descartada al recibir el brief visual.
 
 ## 2. Modelo — calibración del ensemble
 - Pesos Dixon-Coles vs Elo por **grid-search minimizando RPS/Brier** sobre los resultados

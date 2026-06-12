@@ -10,7 +10,8 @@ Lee SPEC.md para la especificación completa antes de implementar cualquier mód
 - Python 3.11, FastAPI, SQLite, scipy / numpy / pandas, APScheduler
 - Auth: passlib[argon2] + python-jose (JWT) o cookies de sesión
 - Chat: WebSockets nativos de FastAPI
-- Frontend: Jinja2 + HTMX o Next.js (empieza simple; Streamlit vale para prototipar el panel)
+- Frontend: **Next.js PWA (React + TS + Tailwind + Framer Motion)**, mobile-only. FastAPI = API
+  JSON pura. Ver DESIGN.md (tokens, plataforma, 21st.dev Magic). [decidido en Fase 0 + brief visual]
 - Tests: pytest
 
 ## Comandos
