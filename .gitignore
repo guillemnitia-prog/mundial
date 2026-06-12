@@ -30,3 +30,6 @@ env/
 .DS_Store
 .idea/
 .vscode/
+
+# Artefacto de modelo entrenado (generado por --train)
+data/model_params.json

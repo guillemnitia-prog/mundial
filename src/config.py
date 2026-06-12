@@ -82,6 +82,11 @@ class Settings:
     football_data_base_url: str = "https://api.football-data.org/v4"
     football_data_competition: str = "WC"  # FIFA World Cup
     eloratings_url: str = "https://www.eloratings.net/World.tsv"  # Elo de selecciones
+    historical_results_url: str = (
+        "https://raw.githubusercontent.com/martj42/international_results/master/results.csv"
+    )
+    model_params_path: str = "data/model_params.json"  # artefacto del modelo entrenado
+    dc_train_years: int = 12  # ventana de años para ajustar Dixon-Coles
 
     @classmethod
     def load(cls) -> "Settings":
@@ -111,6 +116,12 @@ class Settings:
             football_data_base_url=_get_str("FOOTBALL_DATA_BASE_URL", "https://api.football-data.org/v4"),
             football_data_competition=_get_str("FOOTBALL_DATA_COMPETITION", "WC"),
             eloratings_url=_get_str("ELORATINGS_URL", "https://www.eloratings.net/World.tsv"),
+            historical_results_url=_get_str(
+                "HISTORICAL_RESULTS_URL",
+                "https://raw.githubusercontent.com/martj42/international_results/master/results.csv",
+            ),
+            model_params_path=_get_str("MODEL_PARAMS_PATH", "data/model_params.json"),
+            dc_train_years=_get_int("DC_TRAIN_YEARS", 12),
         )
 
 
