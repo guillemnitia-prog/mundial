@@ -59,7 +59,7 @@ def run(db: Session, *, now: datetime | None = None, odds_client=None,
             payloads.append(
                 notify.pre_match_message(db, m, top["outcome"], top["offered_odds"], round(50.0 * frac, 2))
             )
-    summary["push"] = notify.dispatch(payloads)
+    summary["push"] = notify.dispatch(payloads, db)
     return summary
 
 

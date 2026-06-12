@@ -249,3 +249,18 @@ class ApiUsage(Base):
     )
 
     __table_args__ = (UniqueConstraint("source", "period", name="uq_api_usage_source_period"),)
+
+
+class PushSubscription(Base):
+    """Suscripción Web Push de un dispositivo (SPEC §10). Una por endpoint."""
+
+    __tablename__ = "push_subscriptions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
+    endpoint: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    p256dh: Mapped[str] = mapped_column(String, nullable=False)
+    auth: Mapped[str] = mapped_column(String, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_utcnow
+    )

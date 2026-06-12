@@ -2,7 +2,8 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { eur, odds as fmtOdds, outcomeLabel } from "@/lib/format";
-import { Skeleton } from "@/components/ui";
+import { pushPermission, subscribeToPush } from "@/lib/push";
+import { Press, Skeleton } from "@/components/ui";
 
 interface Summary { balance: number; n_bets: number; n_open: number; n_won: number; n_lost: number; total_pnl: number; }
 interface Bet { id: number; match_id: number; market: string; outcome: string; stake: number; odds: number; decision: string; status: string; pnl: number | null; }
@@ -19,11 +20,18 @@ function Stat({ label, value, color }: { label: string; value: string; color?: s
 export default function BalancePage() {
   const [s, setS] = useState<Summary | null>(null);
   const [bets, setBets] = useState<Bet[] | null>(null);
+  const [perm, setPerm] = useState<string>("default");
 
   useEffect(() => {
     api.get<Summary>("/me/balance").then(setS).catch(() => {});
     api.get<Bet[]>("/me/bets").then(setBets).catch(() => {});
+    setPerm(pushPermission());
   }, []);
+
+  async function enablePush() {
+    const ok = await subscribeToPush();
+    setPerm(ok ? "granted" : pushPermission());
+  }
 
   return (
     <div>
@@ -43,6 +51,18 @@ export default function BalancePage() {
             <Stat label="Abiertas" value={`${s.n_open}`} />
             <Stat label="Ganadas / Perdidas" value={`${s.n_won} / ${s.n_lost}`} />
             <Stat label="P&L total" value={`${s.total_pnl >= 0 ? "+" : ""}${eur(s.total_pnl)}`} color={s.total_pnl >= 0 ? "var(--positive)" : "var(--negative)"} />
+          </div>
+        )}
+
+        {perm !== "granted" && perm !== "unsupported" && (
+          <div className="mt-4 flex items-center justify-between rounded-card border border-border bg-surface p-4">
+            <div>
+              <div className="text-sm font-medium">Notificaciones</div>
+              <div className="text-xs text-muted">Avisos de apuestas y resultados</div>
+            </div>
+            <Press onClick={enablePush} className="rounded-btn px-4 py-2 text-sm font-medium" style={{ background: "var(--accent)", color: "#0A0A0A" }}>
+              Activar
+            </Press>
           </div>
         )}
 

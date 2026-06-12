@@ -50,8 +50,23 @@ def pre_match_message(db, match: Match, outcome: str, odds: float, stake_eur: fl
     return {"title": title, "body": body, "url": f"/matches/{match.id}"}
 
 
-def dispatch(payloads: list[dict]) -> int:
-    """Stub de envío: registra los payloads. La Fase 13 lo conecta a pywebpush. Devuelve nº enviados."""
+def dispatch(payloads: list[dict], db=None) -> int:
+    """Envía los payloads por Web Push (Fase 13). Enruta por `user_id`; sin él → broadcast.
+
+    Necesita `db` para buscar suscripciones; sin VAPID configurado, push.py hace no-op seguro.
+    Devuelve el nº de envíos efectivos.
+    """
+    from src.notifications import push
+
+    if db is None:
+        for p in payloads:
+            logger.info("PUSH (sin db): %s — %s", p.get("title"), p.get("body"))
+        return 0
+
+    sent = 0
     for p in payloads:
-        logger.info("PUSH (stub): %s — %s", p.get("title"), p.get("body"))
-    return len(payloads)
+        if p.get("user_id") is not None:
+            sent += push.send_to_user(db, p["user_id"], p)
+        else:
+            sent += push.send_to_all(db, p)
+    return sent

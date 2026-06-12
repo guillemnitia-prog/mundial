@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import { subscribeToPush } from "@/lib/push";
 import { Press, Skeleton } from "@/components/ui";
 
 interface Team { id: number; name: string; fifa_code: string | null; }
@@ -25,6 +26,8 @@ export default function OnboardingPage() {
     setBusy(true);
     try {
       await api.post("/onboarding/champion", { team_id: selected });
+      // Pedir permiso de notificaciones TRAS el onboarding (SPEC §10). No bloqueante.
+      await subscribeToPush().catch(() => {});
       router.replace("/matches");
     } finally {
       setBusy(false);

@@ -62,7 +62,7 @@ def run(db: Session, *, now: datetime | None = None, fd_client=None, elo_ingest=
         notify.settlement_message(db, e["user"], e["bet"], e["match"])
         for e in life["settlement_events"]
     ]
-    summary["push"] = notify.dispatch(payloads)
+    summary["push"] = notify.dispatch(payloads, db)
     summary["settled"] = len(life["settlement_events"])
 
     # Análisis preliminar de los partidos de hoy.

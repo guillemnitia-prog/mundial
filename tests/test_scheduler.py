@@ -203,8 +203,8 @@ def test_daily_refresh_end_to_end(db):
         db, now=now, fd_client=_FakeClient(), elo_ingest=lambda d: None,
         odds_client=_FakeClient(), ensemble=_ensemble(),
     )
-    assert summary["settled"] == 1
-    assert summary["push"] == 1      # una notificación de liquidación
+    assert summary["settled"] == 1   # una liquidación (genera payload de push)
+    assert summary["push"] == 0      # sin VAPID/suscripción el envío es no-op (ver test_push)
     assert summary["analyzed"] == 1  # el partido de hoy
     db.refresh(u)
     assert u.balance == pytest.approx(55.0)  # ganó 5·(2-1)
