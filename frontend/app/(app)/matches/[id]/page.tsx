@@ -53,9 +53,26 @@ export default function MatchDetailPage() {
             <div className="flex items-center justify-between">
               <TeamCol t={m.home} />
               <div className="text-center">
-                <div className="text-xs text-muted">{matchDate(m.utc_date)}</div>
-                <div className="my-1 text-lg font-medium text-muted">vs</div>
-                <div className="text-[11px] text-muted">
+                {(m.status === "live" || m.status === "finished") && m.home_goals != null && m.away_goals != null ? (
+                  <>
+                    <div className="tabular text-3xl font-semibold">
+                      {m.home_goals} <span className="text-muted">-</span> {m.away_goals}
+                    </div>
+                    {m.status === "live" ? (
+                      <div className="mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium" style={{ background: "#FF5252", color: "#0A0A0A" }}>
+                        <span className="h-1.5 w-1.5 rounded-full bg-[#0A0A0A] animate-pulse" /> EN VIVO
+                      </div>
+                    ) : (
+                      <div className="mt-1 text-[11px] text-muted">Finalizado</div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <div className="text-xs text-muted">{matchDate(m.utc_date)}</div>
+                    <div className="my-1 text-lg font-medium text-muted">vs</div>
+                  </>
+                )}
+                <div className="mt-1 text-[11px] text-muted">
                   {m.stage === "group" ? `Grupo ${m.group_label ?? ""}` : m.stage} · {m.neutral_venue ? "campo neutral" : "con anfitrión"}
                 </div>
               </div>

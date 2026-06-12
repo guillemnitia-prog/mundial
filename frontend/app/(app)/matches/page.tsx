@@ -31,28 +31,46 @@ export default function MatchesPage() {
       <div className="flex flex-col gap-2 p-4">
         {!matches && Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-20" />)}
         {matches?.length === 0 && <p className="text-center text-muted">No hay partidos.</p>}
-        {matches?.map((m) => (
-          <Link key={m.id} href={`/matches/${m.id}`} className="rounded-card border border-border bg-surface p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted">
-                {m.stage === "group" ? `Grupo ${m.group_label ?? ""}` : m.stage} · {matchDate(m.utc_date)}
-              </span>
-              <StateChip state={m.state} />
-            </div>
-            <div className="mt-2 flex items-center justify-between">
-              <span className="text-[15px] font-medium">{m.home ?? "Por definir"} <span className="text-muted">vs</span> {m.away ?? "Por definir"}</span>
-            </div>
-            <div className="mt-1 text-xs">
-              {m.state === "pendiente" ? (
-                <span className="text-[#737373]">Análisis pendiente — se generará el día del partido</span>
-              ) : m.n_picks > 0 ? (
-                <span className="text-accent">{m.n_picks} apuesta{m.n_picks > 1 ? "s" : ""} de valor</span>
-              ) : (
-                <span className="text-muted">Sin apuesta de valor</span>
-              )}
-            </div>
-          </Link>
-        ))}
+        {matches?.map((m) => {
+          const hasScore = (m.status === "live" || m.status === "finished") && m.home_goals != null && m.away_goals != null;
+          const hasPicks = m.n_picks > 0;
+          return (
+            <Link key={m.id} href={`/matches/${m.id}`}
+              className="rounded-card border bg-surface p-4 transition active:scale-[0.99]"
+              style={{ borderColor: hasPicks ? "var(--accent)" : "var(--border)" }}>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted">
+                  {m.stage === "group" ? `Grupo ${m.group_label ?? ""}` : m.stage} · {matchDate(m.utc_date)}
+                </span>
+                {m.status === "live" ? (
+                  <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium" style={{ background: "#FF5252", color: "#0A0A0A" }}>
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#0A0A0A] animate-pulse" /> EN VIVO
+                  </span>
+                ) : <StateChip state={m.state} />}
+              </div>
+              <div className="mt-2 flex items-center justify-between gap-3">
+                <span className="text-[15px] font-medium">{m.home ?? "Por definir"}</span>
+                {hasScore ? (
+                  <span className="tabular shrink-0 text-lg font-semibold">{m.home_goals} - {m.away_goals}</span>
+                ) : (
+                  <span className="shrink-0 text-sm text-muted">vs</span>
+                )}
+                <span className="text-[15px] font-medium text-right">{m.away ?? "Por definir"}</span>
+              </div>
+              <div className="mt-2 text-xs">
+                {m.state === "pendiente" ? (
+                  <span className="text-[#737373]">Análisis pendiente — se generará el día del partido</span>
+                ) : hasPicks ? (
+                  <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-medium" style={{ background: "var(--accent-faint)", color: "var(--accent)" }}>
+                    ★ {m.n_picks} apuesta{m.n_picks > 1 ? "s" : ""} de valor
+                  </span>
+                ) : (
+                  <span className="text-muted">Sin apuesta de valor</span>
+                )}
+              </div>
+            </Link>
+          );
+        })}
       </div>
     </div>
   );

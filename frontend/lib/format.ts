@@ -43,3 +43,25 @@ export function outcomeLabel(market: string, outcome: string, home?: string, awa
 }
 
 export const CONF_LABEL: Record<string, string> = { alta: "Confianza alta", media: "Confianza media" };
+
+// Explicación concisa de POR QUÉ se recomienda (a partir de prob modelo vs justa, EV y confianza).
+export function whyRecommendation(
+  market: string, outcome: string, modelProb: number, fairProb: number,
+  evPct: number, confidence: string | null, home?: string, away?: string,
+): string {
+  const label = outcomeLabel(market, outcome, home, away);
+  const edge = Math.round((modelProb - fairProb) * 100);
+  const m = Math.round(modelProb * 100);
+  const f = Math.round(fairProb * 100);
+  const conf = confidence === "alta" ? "alta" : "media";
+  return (
+    `El modelo da ${m}% a «${label}», frente al ${f}% que implica el mercado` +
+    `${edge > 0 ? ` (+${edge} puntos de ventaja)` : ""}. ` +
+    `Eso deja un valor esperado de +${evPct}%. Confianza ${conf}.`
+  );
+}
+
+export const STATUS_LABEL: Record<string, string> = {
+  scheduled: "Programado", live: "EN VIVO", finished: "Finalizado",
+  postponed: "Aplazado", cancelled: "Cancelado",
+};

@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { api, ApiError, Pick } from "@/lib/api";
-import { eur, odds as fmtOdds, outcomeLabel } from "@/lib/format";
+import { eur, odds as fmtOdds, outcomeLabel, whyRecommendation } from "@/lib/format";
 import { ConfidenceBadge, Press } from "./ui";
 
 const MIN_STAKE = 10;
@@ -60,10 +60,37 @@ export function BetCard({
         <span className="tabular ml-auto text-base font-medium">{fmtOdds(pick.offered_odds)}</span>
       </div>
 
-      <div className="mb-3 flex gap-4 text-xs text-muted">
-        <span>Prob. modelo <span className="tabular font-medium text-fg">{Math.round(pick.model_prob * 100)}%</span></span>
-        <span>Prob. justa <span className="tabular font-medium text-fg">{Math.round(pick.fair_prob * 100)}%</span></span>
-        <span>EV <span className="tabular font-medium text-positive">+{pick.ev_pct}%</span></span>
+      {/* Modelo vs mercado, visual */}
+      <div className="mb-3 space-y-1.5">
+        <div className="flex items-center gap-2 text-[11px]">
+          <span className="w-14 text-muted">Modelo</span>
+          <div className="h-2 flex-1 overflow-hidden rounded-full bg-border">
+            <div className="h-full bg-accent" style={{ width: `${Math.round(pick.model_prob * 100)}%` }} />
+          </div>
+          <span className="tabular w-8 text-right font-medium">{Math.round(pick.model_prob * 100)}%</span>
+        </div>
+        <div className="flex items-center gap-2 text-[11px]">
+          <span className="w-14 text-muted">Mercado</span>
+          <div className="h-2 flex-1 overflow-hidden rounded-full bg-border">
+            <div className="h-full" style={{ width: `${Math.round(pick.fair_prob * 100)}%`, background: "#525252" }} />
+          </div>
+          <span className="tabular w-8 text-right text-muted">{Math.round(pick.fair_prob * 100)}%</span>
+        </div>
+      </div>
+
+      {/* Por qué la recomendación */}
+      <div className="mb-3 rounded-[10px] border border-border bg-bg p-2.5">
+        <div className="mb-1 flex items-center gap-1.5 text-[11px] font-medium text-accent">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+          Por qué
+        </div>
+        <p className="text-[12px] leading-relaxed text-muted">
+          {whyRecommendation(pick.market, pick.outcome, pick.model_prob, pick.fair_prob, pick.ev_pct, pick.confidence, home, away)}
+        </p>
+        <div className="mt-1.5 flex gap-3 text-[11px]">
+          <span className="text-muted">Cuota <span className="tabular font-medium text-fg">{fmtOdds(pick.offered_odds)}</span></span>
+          <span className="text-muted">EV <span className="tabular font-medium text-positive">+{pick.ev_pct}%</span></span>
+        </div>
       </div>
 
       <div className="mb-3 rounded-[10px] px-3 py-2 text-[13px]" style={{ background: "var(--accent-faint)" }}>

@@ -39,8 +39,13 @@ export interface MatchListItem {
   stage: string;
   group_label: string | null;
   state: string;
+  status: string;
   home: string | null;
   away: string | null;
+  home_code: string | null;
+  away_code: string | null;
+  home_goals: number | null;
+  away_goals: number | null;
   n_picks: number;
 }
 
@@ -72,7 +77,10 @@ export interface MatchDetail {
   stage: string;
   group_label: string | null;
   state: string;
+  status: string;
   neutral_venue: boolean;
+  home_goals: number | null;
+  away_goals: number | null;
   analyzed_at: string | null;
   analysis_stage: string | null;
   home: TeamInfo | null;
