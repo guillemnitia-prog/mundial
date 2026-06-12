@@ -31,9 +31,12 @@ def create_app() -> FastAPI:
     app = FastAPI(title="WorldCup Betting Analyzer", lifespan=lifespan)
 
     # CORS con credenciales para la PWA (cookie httpOnly).
+    # Permite el FRONTEND_ORIGIN configurado y CUALQUIER despliegue *.vercel.app
+    # (evita tener que clavar la URL exacta de Vercel, que cambia entre despliegues).
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[settings.frontend_origin],
+        allow_origin_regex=r"https://.*\.vercel\.app",
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
