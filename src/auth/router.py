@@ -85,6 +85,12 @@ def me(current_user: User = Depends(get_current_user)) -> UserOut:
     return UserOut.from_user(current_user)
 
 
+@router.get("/ws-token")
+def ws_token(current_user: User = Depends(get_current_user)) -> dict:
+    """Token para autenticar el WebSocket del chat (la cookie httpOnly no la lee JS)."""
+    return {"token": create_access_token(subject=current_user.username)}
+
+
 @router.post("/admin/reset-password", response_model=UserOut)
 def admin_reset_password(
     payload: ResetPasswordRequest,

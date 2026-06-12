@@ -1,10 +1,10 @@
 name: Refresco y análisis
 
-# Automático cada 30 min (resultados en vivo + análisis del día + liquidación + push).
-# El repo es público → minutos de Actions ilimitados. También se puede lanzar a mano.
+# Automático cada 20 min (corre a :00, :20, :40 → incluye las 00:20). Refresca resultados en vivo,
+# analiza los partidos del día, liquida y envía push. Repo público → minutos de Actions ilimitados.
 on:
   schedule:
-    - cron: "*/30 * * * *"
+    - cron: "*/20 * * * *"
   workflow_dispatch:
 
 concurrency:

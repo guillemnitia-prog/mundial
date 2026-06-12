@@ -90,6 +90,38 @@ export default function MatchDetailPage() {
             )}
           </div>
 
+          {m.stats?.x1x2 && (
+            <div className="mx-4 mt-3 rounded-card border border-border bg-surface p-4">
+              <div className="mb-2 text-sm font-medium">Estadísticas del modelo</div>
+              <div className="mb-1 flex h-3 overflow-hidden rounded-full">
+                <div style={{ width: `${Math.round(m.stats.x1x2.home * 100)}%`, background: "var(--accent)" }} />
+                <div style={{ width: `${Math.round(m.stats.x1x2.draw * 100)}%`, background: "#525252" }} />
+                <div style={{ width: `${Math.round(m.stats.x1x2.away * 100)}%`, background: "#2f6f4f" }} />
+              </div>
+              <div className="tabular flex justify-between text-[11px] text-muted">
+                <span>{m.home?.name} <span className="font-medium text-fg">{Math.round(m.stats.x1x2.home * 100)}%</span></span>
+                <span>X <span className="font-medium text-fg">{Math.round(m.stats.x1x2.draw * 100)}%</span></span>
+                <span><span className="font-medium text-fg">{Math.round(m.stats.x1x2.away * 100)}%</span> {m.away?.name}</span>
+              </div>
+              {(m.stats.over25 != null || m.stats.btts_yes != null) && (
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  {m.stats.over25 != null && (
+                    <div className="rounded-btn bg-bg p-2 text-center">
+                      <div className="text-[10px] text-muted">Más de 2.5 goles</div>
+                      <div className="tabular text-base font-medium text-accent">{Math.round(m.stats.over25 * 100)}%</div>
+                    </div>
+                  )}
+                  {m.stats.btts_yes != null && (
+                    <div className="rounded-btn bg-bg p-2 text-center">
+                      <div className="text-[10px] text-muted">Ambos marcan</div>
+                      <div className="tabular text-base font-medium text-accent">{Math.round(m.stats.btts_yes * 100)}%</div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="mb-1 mt-3 px-4 text-sm font-medium text-muted">
             {m.picks.length > 0 ? `Apuestas de valor (${m.picks.length})` : "Análisis"}
           </div>

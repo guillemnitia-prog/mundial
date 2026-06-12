@@ -81,6 +81,7 @@ class Match(Base):
     analysis_status: Mapped[str] = mapped_column(String, nullable=False, default="pending")  # pending|analyzed
     analysis_stage: Mapped[str | None] = mapped_column(String)  # preliminary|final (qué pasada lo generó)
     analyzed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))  # "Actualizado hace X min"
+    analysis_json: Mapped[str | None] = mapped_column(String)  # resumen del modelo (1X2, O/U, BTTS) para la UI
 
     home_team: Mapped["Team"] = relationship("Team", foreign_keys=[home_id])
     away_team: Mapped["Team"] = relationship("Team", foreign_keys=[away_id])

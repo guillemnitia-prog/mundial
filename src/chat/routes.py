@@ -25,7 +25,8 @@ MAX_CONTENT_LEN = 2000
 
 
 def get_user_from_ws(websocket: WebSocket, db: Session) -> User | None:
-    token = websocket.cookies.get(settings.cookie_name)
+    # Token por query param (?token=) — el WS va directo al backend, sin la cookie cross-site.
+    token = websocket.query_params.get("token") or websocket.cookies.get(settings.cookie_name)
     if not token:
         return None
     payload = decode_token(token)

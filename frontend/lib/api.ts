@@ -1,6 +1,8 @@
 // Cliente de la API JSON (FastAPI). Cookie httpOnly → credentials:"include".
 
 export const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
+// Backend directo para el WebSocket del chat (no pasa por el proxy /api).
+export const WS_BASE = process.env.NEXT_PUBLIC_WS_BASE || "ws://localhost:8000";
 
 async function req<T>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
@@ -90,6 +92,7 @@ export interface MatchDetail {
   picks: Pick[];
   message: string | null;
   odds_proxy_notice: string;
+  stats: { x1x2?: { home: number; draw: number; away: number }; over25?: number; btts_yes?: number } | null;
 }
 
 export interface Me {

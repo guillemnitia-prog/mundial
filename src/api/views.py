@@ -23,6 +23,16 @@ router = APIRouter(tags=["views"])
 RECENT_FORM_N = 5
 
 
+def _parse_stats(raw: str | None) -> dict | None:
+    if not raw:
+        return None
+    try:
+        import json
+        return json.loads(raw)
+    except Exception:
+        return None
+
+
 def display_state(match: Match) -> str:
     """Estado de ciclo de vida visible (SPEC §11)."""
     if match.status == "finished":
@@ -93,6 +103,7 @@ class MatchDetail(BaseModel):
     picks: list[PickOut]
     message: str | None  # "Sin apuesta de valor en este partido" si no hay picks
     odds_proxy_notice: str
+    stats: dict | None  # resumen del modelo (1X2, over2.5, btts) — "estadísticas"
 
 
 def _team_info(t: Team | None) -> TeamInfo | None:
@@ -188,6 +199,7 @@ def match_detail(match_id: int, current_user: User = Depends(require_onboarded),
         away_form=_recent_form(db, m.away_id) if m.away_id else [],
         picks=picks, message=message,
         odds_proxy_notice="Cuotas region=eu como proxy de Bet365.es/Sportium; pueden diferir.",
+        stats=_parse_stats(m.analysis_json),
     )
 
 

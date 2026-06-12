@@ -7,6 +7,7 @@ con los datos reales. Sin odds (p.ej. sin ODDS_API_KEY) → 0 picks ("Sin apuest
 
 from __future__ import annotations
 
+import json
 from datetime import datetime, timezone
 
 from sqlalchemy import select
@@ -142,6 +143,7 @@ def analyze_match(db: Session, match: Match, ensemble: EnsembleModel, stage: str
     away = db.get(Team, match.away_id) if match.away_id else None
 
     picks: list[dict] = []
+    model_markets = None
     if home is not None and away is not None:
         model_markets = _model_markets(match, home, away, ensemble)
         market_odds = _consensus_market_odds(db, match.id)
@@ -152,5 +154,20 @@ def analyze_match(db: Session, match: Match, ensemble: EnsembleModel, stage: str
     match.analysis_status = "analyzed"
     match.analysis_stage = stage
     match.analyzed_at = now
+    match.analysis_json = _stats_summary(model_markets) if model_markets else None
     db.commit()
     return picks
+
+
+def _stats_summary(model_markets: dict) -> str:
+    """Resumen compacto del modelo para mostrar como 'estadísticas' en la UI."""
+    out: dict = {}
+    if "1x2" in model_markets:
+        out["x1x2"] = {k: round(v, 3) for k, v in model_markets["1x2"].items()}
+    if "over_under" in model_markets:
+        ou = model_markets["over_under"]
+        if "over_2.5" in ou:
+            out["over25"] = round(ou["over_2.5"], 3)
+    if "btts" in model_markets and "yes" in model_markets["btts"]:
+        out["btts_yes"] = round(model_markets["btts"]["yes"], 3)
+    return json.dumps(out)
