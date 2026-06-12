@@ -1,0 +1,10 @@
+[project]
+name = "worldcup-betting-analyzer"
+version = "0.1.0"
+description = "Análisis de value betting para el Mundial FIFA 2026 (grupo privado de 7)"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"

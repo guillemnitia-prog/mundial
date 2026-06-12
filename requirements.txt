@@ -1,0 +1,27 @@
+# Core
+fastapi
+uvicorn[standard]
+jinja2
+python-multipart
+
+# Datos y modelo
+numpy
+pandas
+scipy
+requests
+httpx
+
+# Base de datos
+sqlalchemy
+
+# Auth
+passlib[argon2]
+python-jose[cryptography]
+
+# Scheduler
+apscheduler
+python-dotenv
+
+# Tests
+pytest
+pytest-asyncio

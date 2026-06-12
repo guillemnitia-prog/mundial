@@ -1,0 +1,31 @@
+# Secretos — NUNCA versionar
+.env
+*.env
+!.env.example
+users_seed.*
+*secret*
+*.key
+
+# Base de datos SQLite (la caché vive aquí; no se versiona)
+*.db
+*.sqlite
+*.sqlite3
+data/*.db
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Entornos virtuales
+.venv/
+venv/
+env/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
