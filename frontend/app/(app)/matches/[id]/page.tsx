@@ -139,6 +139,11 @@ export default function MatchDetailPage() {
             ))
           )}
 
+          <button onClick={() => router.push("/como-funciona")}
+            className="mx-4 mb-1 mt-2 flex w-[calc(100%-2rem)] items-center justify-center gap-2 rounded-btn border border-border py-2.5 text-sm text-accent">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+            Cómo se calculan estas probabilidades
+          </button>
           <Disclaimer />
         </>
       )}

@@ -1,11 +1,13 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { api, MatchListItem } from "@/lib/api";
 import { matchDate } from "@/lib/format";
 import { Skeleton, StateChip } from "@/components/ui";
 
 export default function MatchesPage() {
+  const router = useRouter();
   const [matches, setMatches] = useState<MatchListItem[] | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -25,7 +27,10 @@ export default function MatchesPage() {
     <div>
       <header className="glass sticky top-0 z-10 flex items-center gap-2 border-b border-border px-4 py-3" style={{ paddingTop: "calc(12px + env(safe-area-inset-top))" }}>
         <h1 className="text-lg font-medium">Partidos</h1>
-        <button onClick={onRefresh} className="ml-auto text-sm text-accent">{refreshing ? "…" : "Actualizar"}</button>
+        <button onClick={() => router.push("/como-funciona")} aria-label="Cómo funciona" className="ml-auto text-muted">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+        </button>
+        <button onClick={onRefresh} className="text-sm text-accent">{refreshing ? "…" : "Actualizar"}</button>
       </header>
 
       <div className="flex flex-col gap-2 p-4">
