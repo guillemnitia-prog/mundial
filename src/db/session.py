@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+import sqlite3
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -34,15 +35,15 @@ engine: Engine = create_engine(
 
 @event.listens_for(Engine, "connect")
 def _set_sqlite_pragma(dbapi_connection, connection_record):  # noqa: ANN001
-    """Activa la verificación de FK en cada conexión SQLite."""
-    # Solo aplica al driver de SQLite (sqlite3 expone .execute en el cursor).
-    try:
-        cursor = dbapi_connection.cursor()
-        cursor.execute("PRAGMA foreign_keys=ON")
-        cursor.close()
-    except Exception:
-        # Otros backends no necesitan este PRAGMA.
-        pass
+    """Activa la verificación de FK en cada conexión SQLite.
+
+    SOLO en SQLite: en Postgres este PRAGMA es SQL inválido y abortaría la transacción.
+    """
+    if not isinstance(dbapi_connection, sqlite3.Connection):
+        return
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()
 
 
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False, class_=Session)
