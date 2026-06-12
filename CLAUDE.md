@@ -53,9 +53,11 @@ Lee SPEC.md para la especificación completa antes de implementar cualquier mód
   Dos pasadas el día del partido: mañana (preliminary) y pre-partido ~2h/~1h (final). matches tiene
   analysis_status (pending|analyzed), analysis_stage (preliminary|final) y analyzed_at. Los partidos
   de días futuros se listan como "Análisis pendiente — se generará el día del partido".
-- Saldo VIRTUAL INDIVIDUAL: cada uno de los 7 usuarios empieza con 50 € (users.balance,
-  DEFAULT 50.0). NO es un bote común: 7 saldos independientes. El stake en € se recalcula
-  por usuario sobre su saldo ACTUAL, aunque el pronóstico (outcome+cuota) sea el mismo.
+- Saldo VIRTUAL INDIVIDUAL: cada usuario empieza con 50 € (users.balance, DEFAULT 50.0). NO es un
+  bote común: saldos independientes. El stake en € se recalcula por usuario sobre su saldo ACTUAL,
+  aunque el pronóstico (outcome+cuota) sea el mismo. Saldo EDITABLE self-service: cada usuario puede
+  ingresar/retirar/fijar su saldo cuando quiera (POST /me/balance/{deposit|withdraw|set}); cada
+  movimiento va a balance_ledger (bet_id NULL). Retirar nunca por debajo de 0.
 - Stake por usuario = max(20% del saldo, 10 €), tope 25% del saldo (MIN_STAKE_PCT=0.20,
   MIN_STAKE_EUR=10, MAX_STAKE_PCT=0.25). NUNCA recomendar < 10 €; si el saldo < 10 €, no apostar.
   No apostar si EV<=0. Devolver stake en € y en % del saldo; el € es individual por usuario.

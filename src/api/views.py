@@ -12,7 +12,9 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from src.auth.dependencies import get_current_user, require_onboarded
+from src.bankroll import balance as balance_ops
 from src.bankroll import kelly
+from src.bankroll.balance import BalanceError
 from src.db.schema import Bet, Match, Prediction, Team, User
 from src.db.session import get_db
 
@@ -196,6 +198,39 @@ class BalanceSummary(BaseModel):
     n_won: int
     n_lost: int
     total_pnl: float
+
+
+class AmountIn(BaseModel):
+    amount: float
+
+
+_BALANCE_ERR = {"invalid_amount": 422, "insufficient_funds": 422, "amount_too_large": 422}
+
+
+def _balance_op(op, current_user, db, value) -> dict:
+    try:
+        op(db, current_user, value)
+    except BalanceError as exc:
+        raise HTTPException(status_code=_BALANCE_ERR.get(exc.code, 400), detail=exc.code)
+    return {"balance": round(current_user.balance, 2)}
+
+
+@router.post("/me/balance/deposit")
+def deposit(payload: AmountIn, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Ingresar saldo."""
+    return _balance_op(balance_ops.deposit, current_user, db, payload.amount)
+
+
+@router.post("/me/balance/withdraw")
+def withdraw(payload: AmountIn, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Retirar saldo (no más que el disponible)."""
+    return _balance_op(balance_ops.withdraw, current_user, db, payload.amount)
+
+
+@router.post("/me/balance/set")
+def set_balance(payload: AmountIn, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Fijar el saldo a un valor concreto (≥0)."""
+    return _balance_op(balance_ops.set_balance, current_user, db, payload.amount)
 
 
 @router.get("/me/balance", response_model=BalanceSummary)

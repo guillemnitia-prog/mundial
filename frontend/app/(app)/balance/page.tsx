@@ -21,9 +21,16 @@ export default function BalancePage() {
   const [s, setS] = useState<Summary | null>(null);
   const [bets, setBets] = useState<Bet[] | null>(null);
   const [perm, setPerm] = useState<string>("default");
+  const [amount, setAmount] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  function reload() {
+    api.get<Summary>("/me/balance").then(setS).catch(() => {});
+  }
 
   useEffect(() => {
-    api.get<Summary>("/me/balance").then(setS).catch(() => {});
+    reload();
     api.get<Bet[]>("/me/bets").then(setBets).catch(() => {});
     setPerm(pushPermission());
   }, []);
@@ -31,6 +38,19 @@ export default function BalancePage() {
   async function enablePush() {
     const ok = await subscribeToPush();
     setPerm(ok ? "granted" : pushPermission());
+  }
+
+  async function adjust(kind: "deposit" | "withdraw" | "set") {
+    const val = parseFloat(amount.replace(",", "."));
+    if (!isFinite(val) || val < 0) { setErr("Importe no válido."); return; }
+    setBusy(true); setErr(null);
+    try {
+      await api.post(`/me/balance/${kind}`, { amount: val });
+      setAmount("");
+      reload();
+    } catch {
+      setErr("No se pudo (revisa el importe / saldo).");
+    } finally { setBusy(false); }
   }
 
   return (
@@ -53,6 +73,24 @@ export default function BalancePage() {
             <Stat label="P&L total" value={`${s.total_pnl >= 0 ? "+" : ""}${eur(s.total_pnl)}`} color={s.total_pnl >= 0 ? "var(--positive)" : "var(--negative)"} />
           </div>
         )}
+
+        <div className="mt-4 rounded-card border border-border bg-surface p-4">
+          <div className="mb-2 text-sm font-medium">Editar saldo</div>
+          <input
+            inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)}
+            placeholder="Importe en €"
+            className="tabular w-full rounded-btn border border-border bg-bg px-4 py-2.5 outline-none focus:border-accent"
+          />
+          <div className="mt-2 flex gap-2">
+            <Press onClick={() => adjust("deposit")} className="flex-1 rounded-btn py-2 text-sm font-medium" style={{ background: "var(--accent)", color: "#0A0A0A" }}>
+              {busy ? "…" : "Ingresar"}
+            </Press>
+            <Press onClick={() => adjust("withdraw")} className="flex-1 rounded-btn border border-border py-2 text-sm text-fg">Retirar</Press>
+            <Press onClick={() => adjust("set")} className="flex-1 rounded-btn border border-border py-2 text-sm text-muted">Fijar</Press>
+          </div>
+          {err && <p className="mt-2 text-xs text-negative">{err}</p>}
+          <p className="mt-2 text-[11px] text-[#737373]">Saldo virtual de partida: 50 €. Puedes ingresar, retirar o fijarlo cuando quieras.</p>
+        </div>
 
         {perm !== "granted" && perm !== "unsupported" && (
           <div className="mt-4 flex items-center justify-between rounded-card border border-border bg-surface p-4">

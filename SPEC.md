@@ -123,9 +123,14 @@ selectivo; no rellena recomendaciones para cumplir un cupo.
 
 ## 5. Saldo individual y dimensionamiento del stake (Kelly fraccionado)
 
-**Saldo virtual individual (NO bote común).** Cada uno de los 7 usuarios empieza con 50 €
-virtuales (`users.balance DEFAULT 50.0`). Son 7 saldos independientes. Cada usuario acepta
-("apostar") o se salta ("saltar") cada recomendación; su saldo refleja SOLO lo que apostó.
+**Saldo virtual individual (NO bote común).** Cada usuario empieza con 50 € virtuales
+(`users.balance DEFAULT 50.0`). Son saldos independientes. Cada usuario acepta ("apostar") o se
+salta ("saltar") cada recomendación; su saldo refleja SOLO lo que apostó.
+
+**Saldo editable (self-service).** Cada usuario puede **ingresar**, **retirar** o **fijar** su
+propio saldo cuando quiera (`POST /me/balance/{deposit|withdraw|set}`); cada movimiento se registra
+en `balance_ledger` (con `bet_id = NULL`). Retirar nunca por debajo de 0. El saldo de partida sigue
+siendo 50 €.
 
 ### 5.1 Cálculo del stake (`bankroll/kelly.py`), por usuario
 Política de dimensionamiento (decidida por el grupo): cada apuesta es **significativa**.
