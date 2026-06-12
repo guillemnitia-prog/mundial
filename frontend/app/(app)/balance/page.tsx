@@ -92,7 +92,17 @@ export default function BalancePage() {
           <p className="mt-2 text-[11px] text-[#737373]">Saldo virtual de partida: 50 €. Puedes ingresar, retirar o fijarlo cuando quieras.</p>
         </div>
 
-        {perm !== "granted" && perm !== "unsupported" && (
+        {perm === "unsupported" ? (
+          <div className="mt-4 rounded-card border p-4" style={{ borderColor: "var(--warning)" }}>
+            <div className="text-sm font-medium" style={{ color: "var(--warning)" }}>Activa las notificaciones</div>
+            <div className="mt-1 text-xs leading-relaxed text-muted">
+              En iPhone tienes que <span className="text-fg">instalar la app</span> primero:
+              pulsa <span className="text-fg">Compartir</span> (el cuadrado con la flecha ↑) →
+              <span className="text-fg"> "Añadir a pantalla de inicio"</span>. Luego abre la app
+              <span className="text-fg"> desde ese icono</span> y vuelve aquí para activarlas.
+            </div>
+          </div>
+        ) : perm !== "granted" ? (
           <div className="mt-4 flex items-center justify-between rounded-card border border-border bg-surface p-4">
             <div>
               <div className="text-sm font-medium">Notificaciones</div>
@@ -102,7 +112,7 @@ export default function BalancePage() {
               Activar
             </Press>
           </div>
-        )}
+        ) : null}
 
         <h2 className="mb-2 mt-6 text-sm font-medium text-muted">Historial</h2>
         <div className="flex flex-col gap-2">
