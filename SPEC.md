@@ -12,7 +12,9 @@ App privada para un grupo de 7 amigos. Para cada partido del Mundial 2026:
 2. Calcula probabilidades con un modelo propio (ensemble Dixon-Coles + Elo).
 3. Compara contra las cuotas del mercado (sin margen) y detecta value (EV>0).
 4. Propone exactamente 2 pronósticos por partido, ambos con cuota decimal >= 1.40.
-5. Sugiere un stake según Kelly fraccionado (1/4) sobre un bankroll de grupo.
+5. Sugiere un stake según Kelly fraccionado (1/4) sobre el **saldo virtual individual** de
+   cada usuario (50 € de partida por usuario; NO es un bote común). El stake en € se recalcula
+   por usuario sobre su saldo ACTUAL, aunque el pronóstico (outcome + cuota) sea el mismo para todos.
 
 Aviso permanente en la UI: batir al mercado a largo plazo es muy difícil; esto es
 una herramienta de análisis y entretenimiento, NO una inversión garantizada.
@@ -43,12 +45,15 @@ matches(id PK, utc_date, home_id FK, away_id FK, group_label, stage,
 odds(id PK, match_id FK, bookmaker, market, outcome, price REAL, captured_at)
 predictions(id PK, match_id FK, market, outcome, model_prob REAL, fair_prob REAL,
             offered_odds REAL, ev REAL, recommended_stake REAL, rank INT, created_at)
-users(id PK, username UNIQUE, password_hash, role, has_onboarded BOOL, created_at)
+users(id PK, username UNIQUE, password_hash, role, has_onboarded BOOL,
+      balance REAL DEFAULT 50.0, created_at)   -- saldo virtual individual, 50 € de partida
 champion_picks(user_id PK FK, team_id FK, created_at)   -- inmutable
 chat_messages(id PK, user_id FK, content, created_at)
-bankroll(id PK, as_of_date, balance REAL)
-bets(id PK, match_id FK, market, outcome, stake REAL, odds REAL,
-     result, pnl REAL, clv REAL, placed_at)
+-- NO hay bote común: cada usuario tiene su propio saldo (users.balance) y su propio historial.
+bets(id PK, user_id FK, match_id FK, prediction_id FK, market, outcome,
+     stake REAL, odds REAL, status, result, pnl REAL, clv REAL,
+     placed_at, settled_at)   -- status: open|won|lost|void. Una fila por usuario y apuesta.
+balance_ledger(id PK, user_id FK, bet_id FK, delta REAL, balance_after REAL, created_at)
 ```
 
 ---
@@ -95,12 +100,33 @@ bets(id PK, match_id FK, market, outcome, stake REAL, odds REAL,
 
 ---
 
-## 5. Bankroll (Kelly fraccionado)
+## 5. Saldo individual y dimensionamiento del stake (Kelly fraccionado)
 
-- f* = (b·p − q) / b ; b = cuota−1, p = model_prob, q = 1−p. Solo si f*>0.
-- Usar **1/4 Kelly**. Cap absoluto: nunca >5% del bankroll en una apuesta.
-- Bankroll de grupo = 7 × 50 € = 350 €. Recalcular % sobre el balance ACTUAL.
-- No perseguir pérdidas. Si el bankroll cae >50%, reducir la unidad a la mitad.
+**Saldo virtual individual (NO bote común).** Cada uno de los 7 usuarios empieza con 50 €
+virtuales (`users.balance DEFAULT 50.0`). Son 7 saldos independientes. Cada usuario acepta
+("apostar") o se salta ("saltar") cada recomendación; su saldo refleja SOLO lo que apostó.
+
+### 5.1 Cálculo del stake (`bankroll/kelly.py`), por usuario
+- Fracción Kelly: f = ((odds−1)·p − (1−p)) / (odds−1) ; p = model_prob. Solo si f>0.
+- **1/4 Kelly sobre el saldo ACTUAL del usuario**: `stake = saldo · (f / 4)`.
+- **Tope duro 5%**: nunca más del 5% del saldo en una apuesta. Si ¼ Kelly lo supera, recortar
+  a `0.05 · saldo`.
+- **Mínimo**: si el stake sale < 1 € (o por debajo del mínimo de la casa), marcar
+  **"demasiado pequeña, no apostar"** (no se recomienda apostar).
+- Solo recomendar si **EV>0 y cuota ≥ 1.40**. Nunca todo el saldo en un partido
+  (p.ej. con 50 €, recomendar 8–15 €, jamás 50 €).
+- Devolver stake en **€ y en % del saldo** (p.ej. "Apuesta 8,50 € — 17% de tu saldo, cuota 1,75").
+- El € se **recalcula individualmente** sobre el saldo de cada usuario, aunque el pronóstico
+  (outcome + cuota) sea el mismo para todos.
+- No perseguir pérdidas. Si el saldo de un usuario cae >50% del inicial, reducir la unidad a la mitad.
+
+### 5.2 Liquidación automática
+- Al terminar el partido (`matches.status = finished` con goles), liquidar cada `bets` abierta:
+  - **gana** → `balance += stake·(odds−1)`, `pnl = +stake·(odds−1)`, `status=won`.
+  - **pierde** → `balance −= stake`, `pnl = −stake`, `status=lost`.
+  - **anulada** → `status=void`, `pnl=0`, devolver stake si procede.
+- Registrar cada movimiento en `balance_ledger` (delta + balance_after).
+- Cada usuario ve su saldo, su historial de apuestas y un **ranking del grupo por saldo**.
 
 ---
 
@@ -132,8 +158,12 @@ bets(id PK, match_id FK, market, outcome, stake REAL, odds REAL,
 - GET  /matches  (lista con estado y pronósticos)
 - GET  /matches/{id}  (análisis detallado + 2 pronósticos + EV + stake sugerido)
 - GET  /champion-picks
-- GET  /bankroll  /  POST /bets  (registrar apuesta y resultado)
+- GET  /me/balance  (saldo actual + historial de apuestas del usuario)
+- GET  /ranking  (ranking del grupo por saldo)
+- POST /bets  (aceptar una recomendación: crea bet con stake individual; "saltar" no crea fila)
 - WS   /ws/chat
+
+La liquidación de apuestas es automática al cerrarse el partido (ver §5.2), no manual.
 
 ---
 

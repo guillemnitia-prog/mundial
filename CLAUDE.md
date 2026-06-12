@@ -24,10 +24,10 @@ Lee SPEC.md para la especificación completa antes de implementar cualquier mód
 - ingest/   → clientes de APIs: football-data.org, The Odds API, eloratings (con caché)
 - models/   → dixon_coles.py, elo_model.py, ensemble.py  (EL MODELO VIVE AQUÍ)
 - value/    → devig.py (quita margen) + ev.py (detecta EV>0, filtra cuota >= 1.40)
-- bankroll/ → kelly.py (Kelly fraccionado 1/4)
+- bankroll/ → kelly.py (1/4 Kelly sobre saldo individual) + settle.py (liquidación + balance_ledger)
 - auth/     → users.py (hash/login), onboarding.py (pregunta campeón), seed_users.py
 - chat/     → manager.py (ConnectionManager/broadcast) + routes.py (/ws/chat)
-- db/       → schema.py (SQLite)
+- db/       → schema.py (SQLite; users.balance, bets por usuario, balance_ledger)
 - api/      → main.py (endpoints FastAPI)
 - scheduler/→ daily_refresh.py
 
@@ -39,7 +39,15 @@ Lee SPEC.md para la especificación completa antes de implementar cualquier mód
 - Ventaja local SOLO para anfitriones (USA/Canadá/México). Resto = campo neutral.
 - Los 2 pronósticos por partido SOLO con cuota decimal >= 1.40. Filtrar en value/ev.py
   ANTES de elegir los 2 de mayor EV. Si quedan <2 con EV>0, mostrar los que haya (no inventar).
-- Stake = 1/4 Kelly, nunca >5% del bankroll. No apostar si EV<=0.
+- Saldo VIRTUAL INDIVIDUAL: cada uno de los 7 usuarios empieza con 50 € (users.balance,
+  DEFAULT 50.0). NO es un bote común: 7 saldos independientes. El stake en € se recalcula
+  por usuario sobre su saldo ACTUAL, aunque el pronóstico (outcome+cuota) sea el mismo.
+- Stake = 1/4 Kelly sobre el saldo del usuario (stake = saldo·(f/4)), nunca >5% del saldo.
+  No apostar si EV<=0. Si el stake sale <1 € (o < mínimo de la casa): "demasiado pequeña,
+  no apostar". Nunca todo el saldo en un partido. Devolver stake en € y en % del saldo.
+- Cada usuario acepta ("apostar") o se salta ("saltar") cada recomendación; el saldo refleja
+  solo lo apostado. Liquidación AUTOMÁTICA al terminar el partido (gana: balance+=stake·(odds−1);
+  pierde: balance−=stake), registrando cada movimiento en balance_ledger. Ranking de grupo por saldo.
 - Cachea TODO en SQLite. Respeta límites: football-data 10 req/min,
   The Odds API 500 créditos/mes. Nunca llamar APIs en cada request.
 - Bet365.es/Sportium NO tienen API: usa cuotas region=eu como proxy y AVISA de la diferencia.

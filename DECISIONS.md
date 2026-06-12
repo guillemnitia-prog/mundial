@@ -32,9 +32,13 @@ Vista **completa y estructurada**:
 - Heatmap de marcadores **opcional** (no bloqueante).
 
 ## 4. Presentación de EV y stake (UI)
+> **Actualización (aclaración del usuario):** NO hay bote común. Cada usuario tiene un **saldo
+> virtual individual** de 50 € de partida (`users.balance`). El stake se calcula y se muestra
+> **por usuario sobre su saldo actual**. Ver §9.
 - **EV en %** del importe (p.ej. +6,2 %).
-- **Stake** en € sobre el bankroll de grupo **y** su % del bankroll (1/4 Kelly, tope 5 %).
-- **Equivalente por persona** (÷7).
+- **Stake** en € sobre el **saldo individual del usuario** **y** su % del saldo (1/4 Kelly,
+  tope 5 %), p.ej. *"Apuesta 8,50 € — 17% de tu saldo, cuota 1,75"*.
+- Si el stake sale < 1 € (o < mínimo de la casa): **"demasiado pequeña, no apostar"**.
 - Badge visible de **cuota proxy `region=eu`** y **disclaimer de juego responsable** siempre.
 
 ## 5. Edge cases
@@ -72,10 +76,14 @@ Vista **completa y estructurada**:
 - **Contador de créditos persistido en SQLite** que **corta** antes de exceder el límite mensual.
 - Refresco extra cerca del kickoff descartado por presupuesto (revisable si sobran créditos).
 
-### 7.2 Resultados y CLV
+### 7.2 Resultados, liquidación y CLV
 - **Resultados automáticos**: football-data rellena `home_goals/away_goals/status` en el
-  refresco diario y **liquida `bets` automáticamente**.
-- **Apuestas manuales**: el grupo registra stake y cuota tomada vía `POST /bets`.
+  refresco diario.
+- **Aceptar/saltar**: cada usuario acepta una recomendación (botón "apostar" → `POST /bets`,
+  crea `bets` con su stake individual) o la salta (no crea fila). El saldo refleja solo lo apostado.
+- **Liquidación automática** al cerrarse el partido (`status=finished`): gana →
+  `balance += stake·(odds−1)`; pierde → `balance −= stake`; movimiento en `balance_ledger`.
+  Ranking de grupo por saldo (`GET /ranking`).
 - **CLV** = cuota apostada vs **cuota de cierre cacheada**.
 
 ## 8. Defaults menores zanjados (sin pregunta, revisables)
@@ -91,8 +99,8 @@ Vista **completa y estructurada**:
 ## Reglas no negociables (recordatorio, de CLAUDE.md — siempre por encima de lo anterior)
 - Value betting con **EV > 0**; nunca recomendar sin value.
 - Filtro de **cuota decimal ≥ 1.40** antes de ordenar por EV.
-- **1/4 Kelly**, tope **5 %** del bankroll; recalcular sobre balance actual; reducir unidad a la
-  mitad si el bankroll cae >50 %.
+- **1/4 Kelly** sobre el **saldo individual** del usuario, tope **5 %** del saldo; recalcular
+  sobre el saldo actual; reducir unidad a la mitad si el saldo cae >50 % del inicial.
 - **Caché en SQLite**; nunca llamar APIs en cada request. Respetar límites (football-data
   10 req/min; The Odds API 500 cr/mes).
 - Elo de **eloratings.net** (selecciones), nunca ClubElo. Ventaja local solo anfitriones.
