@@ -14,8 +14,14 @@ export function BottomTabBar() {
   const path = usePathname();
   return (
     <nav
-      className="glass fixed bottom-0 left-1/2 w-full max-w-[430px] -translate-x-1/2 border-t border-border"
-      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      className="fixed bottom-0 left-1/2 z-20 w-full max-w-[430px] -translate-x-1/2 border-t"
+      style={{
+        paddingBottom: "env(safe-area-inset-bottom)",
+        background: "#070b09",
+        borderColor: "#16241d",
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
+      }}
     >
       <div className="flex">
         {TABS.map((t) => {

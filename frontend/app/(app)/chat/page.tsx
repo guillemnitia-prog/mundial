@@ -42,15 +42,17 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex h-[100dvh] flex-col" style={{ paddingBottom: "calc(72px + env(safe-area-inset-bottom))" }}>
-      <header className="glass sticky top-0 z-10 flex items-center gap-2 border-b border-border px-4 py-3" style={{ paddingTop: "calc(12px + env(safe-area-inset-top))" }}>
+    // Caja fija entre la cabecera y la barra inferior: SOLO la conversación hace scroll.
+    <div className="fixed left-1/2 top-0 z-0 flex w-full max-w-[430px] -translate-x-1/2 flex-col"
+      style={{ bottom: "calc(60px + env(safe-area-inset-bottom))" }}>
+      <header className="glass z-10 flex shrink-0 items-center gap-2 border-b border-border px-4 py-3" style={{ paddingTop: "calc(12px + env(safe-area-inset-top))" }}>
         <h1 className="text-lg font-medium">Chat</h1>
         <span className="ml-auto text-xs" style={{ color: connected ? "var(--positive)" : "var(--muted)" }}>
           {connected ? "● en línea" : "conectando…"}
         </span>
       </header>
 
-      <div className="flex-1 overflow-y-auto px-4 py-3">
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
         {msgs.map((m, i) => {
           const mine = m.username === me;
           return (
@@ -68,7 +70,7 @@ export default function ChatPage() {
         <div ref={endRef} />
       </div>
 
-      <div className="glass flex gap-2 border-t border-border p-3">
+      <div className="flex shrink-0 gap-2 border-t border-border p-3" style={{ background: "#0a120e" }}>
         <input
           value={text} onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && send()}
