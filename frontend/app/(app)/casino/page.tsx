@@ -40,7 +40,7 @@ export default function CasinoPage() {
 
         <div className="rounded-card border border-[#14513c] p-5 text-center" style={{ background: "#0c2a20" }}>
           <div className="text-lg font-semibold" style={{ color: "#FFB300" }}>Más juegos, próximamente chavales</div>
-          <p className="mx-auto mt-1 max-w-[260px] text-sm text-muted">Seguimos montando el casino. ¡La ruleta ya está lista!</p>
+          <p className="mx-auto mt-1 max-w-[260px] text-sm text-muted">Seguimos montando el casino. ¡La ruleta ya está casi lista!</p>
         </div>
 
         <p className="mt-6 px-1 text-[11px] leading-relaxed text-[#737373]">
