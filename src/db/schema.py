@@ -145,6 +145,7 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=_utcnow
     )
+    last_seen: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))  # presencia "en línea"
 
     __table_args__ = (CheckConstraint(f"role IN {USER_ROLES}", name="ck_users_role"),)
 

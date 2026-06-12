@@ -243,15 +243,35 @@ def match_detail(match_id: int, current_user: User = Depends(require_onboarded),
     )
 
 
+ONLINE_WINDOW = timedelta(seconds=90)  # "en línea" si dio señal hace menos de esto
+
+
+@router.post("/me/ping", status_code=status.HTTP_204_NO_CONTENT)
+def ping(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Latido de presencia: marca al usuario como activo ahora."""
+    current_user.last_seen = datetime.now(timezone.utc)
+    db.commit()
+    return None
+
+
 class RankingRow(BaseModel):
     username: str
     balance: float
+    online: bool
 
 
 @router.get("/ranking", response_model=list[RankingRow])
 def ranking(_user: User = Depends(require_onboarded), db: Session = Depends(get_db)):
+    now = datetime.now(timezone.utc)
     users = db.execute(select(User).order_by(User.balance.desc())).scalars().all()
-    return [RankingRow(username=u.username, balance=round(u.balance, 2)) for u in users]
+    out = []
+    for u in users:
+        ls = u.last_seen
+        if ls is not None and ls.tzinfo is None:
+            ls = ls.replace(tzinfo=timezone.utc)
+        online = ls is not None and (now - ls) < ONLINE_WINDOW
+        out.append(RankingRow(username=u.username, balance=round(u.balance, 2), online=online))
+    return out
 
 
 class BalanceSummary(BaseModel):
