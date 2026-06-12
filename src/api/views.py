@@ -276,6 +276,7 @@ def ranking(_user: User = Depends(require_onboarded), db: Session = Depends(get_
 
 class BalanceSummary(BaseModel):
     balance: float
+    casino_balance: float
     n_bets: int
     n_open: int
     n_won: int
@@ -322,6 +323,7 @@ def my_balance(current_user: User = Depends(get_current_user), db: Session = Dep
     settled = [b for b in bets if b.pnl is not None]
     return BalanceSummary(
         balance=round(current_user.balance, 2),
+        casino_balance=round(current_user.casino_balance, 2),
         n_bets=len([b for b in bets if b.decision != "rejected"]),
         n_open=len([b for b in bets if b.status == "open"]),
         n_won=len([b for b in bets if b.status == "won"]),

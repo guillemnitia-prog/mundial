@@ -5,7 +5,7 @@ import { eur, odds as fmtOdds, outcomeLabel } from "@/lib/format";
 import { pushPermission, subscribeToPush } from "@/lib/push";
 import { Press, Skeleton } from "@/components/ui";
 
-interface Summary { balance: number; n_bets: number; n_open: number; n_won: number; n_lost: number; total_pnl: number; }
+interface Summary { balance: number; casino_balance: number; n_bets: number; n_open: number; n_won: number; n_lost: number; total_pnl: number; }
 interface Bet { id: number; match_id: number; market: string; outcome: string; stake: number; odds: number; decision: string; status: string; pnl: number | null; }
 
 function Stat({ label, value, color }: { label: string; value: string; color?: string }) {
@@ -60,9 +60,15 @@ export default function BalancePage() {
       </header>
 
       <div className="p-4">
-        <div className="rounded-card border border-border bg-surface p-5 text-center">
-          <div className="text-xs text-muted">Saldo virtual</div>
-          <div className="tabular mt-1 text-4xl font-semibold text-accent">{s ? eur(s.balance) : "—"}</div>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="rounded-card border border-border bg-surface p-4 text-center">
+            <div className="text-xs text-muted">Saldo apuestas</div>
+            <div className="tabular mt-1 text-2xl font-semibold text-accent">{s ? eur(s.balance) : "—"}</div>
+          </div>
+          <div className="rounded-card border p-4 text-center" style={{ borderColor: "#FFB30055" }}>
+            <div className="text-xs" style={{ color: "#FFB300" }}>🎰 Saldo casino</div>
+            <div className="tabular mt-1 text-2xl font-semibold" style={{ color: "#FFB300" }}>{s ? eur(s.casino_balance) : "—"}</div>
+          </div>
         </div>
 
         {!s ? <Skeleton className="mt-4 h-20" /> : (

@@ -101,4 +101,5 @@ export interface Me {
   role: string;
   has_onboarded: boolean;
   balance: number;
+  casino_balance: number;
 }

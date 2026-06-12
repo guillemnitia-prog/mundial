@@ -1,15 +1,24 @@
 "use client";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { api, Me } from "@/lib/api";
+import { eur } from "@/lib/format";
 
 export default function CasinoPage() {
   const router = useRouter();
+  const [casino, setCasino] = useState<number | null>(null);
+  useEffect(() => {
+    api.get<Me>("/auth/me").then((m) => setCasino(m.casino_balance)).catch(() => {});
+  }, []);
   return (
     <div>
       <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-[#14513c] px-4 py-3"
         style={{ background: "linear-gradient(180deg,#0c2a20,#0A1712)", paddingTop: "calc(12px + env(safe-area-inset-top))" }}>
         <h1 className="text-lg font-semibold" style={{ color: "#FFB300" }}>Casino</h1>
-        <span className="ml-auto rounded-full px-2 py-0.5 text-[10px] font-medium" style={{ background: "var(--warning)", color: "#412402" }}>BETA</span>
+        <span className="tabular ml-auto rounded-full px-2.5 py-1 text-sm font-semibold" style={{ background: "#FFB30022", color: "#FFB300" }}>
+          🎰 {casino != null ? eur(casino) : "—"}
+        </span>
       </header>
 
       <div className="p-4">

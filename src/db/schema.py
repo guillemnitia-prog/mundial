@@ -142,6 +142,8 @@ class User(Base):
     balance: Mapped[float] = mapped_column(
         Float, nullable=False, default=INITIAL_USER_BALANCE, server_default=str(INITIAL_USER_BALANCE)
     )
+    # Saldo del CASINO, separado del de apuestas: 20 € de partida. Jugar al casino no toca `balance`.
+    casino_balance: Mapped[float] = mapped_column(Float, nullable=False, default=20.0, server_default="20.0")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=_utcnow
     )

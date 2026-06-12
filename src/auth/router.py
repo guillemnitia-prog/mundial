@@ -36,6 +36,7 @@ class UserOut(BaseModel):
     role: str
     has_onboarded: bool
     balance: float
+    casino_balance: float
 
     @classmethod
     def from_user(cls, user: User) -> "UserOut":
@@ -45,6 +46,7 @@ class UserOut(BaseModel):
             role=user.role,
             has_onboarded=user.has_onboarded,
             balance=user.balance,
+            casino_balance=user.casino_balance,
         )
 
 
