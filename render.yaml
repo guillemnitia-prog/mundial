@@ -1,53 +1,24 @@
-# Blueprint de Render para el backend (API + scheduler). El frontend va en Vercel (ver DEPLOY.md).
-# Nota: disco persistente y cron requieren plan de pago en Render; en free puedes empezar sin cron
-# y disparar el refresco a mano.
+# Blueprint de Render: backend FastAPI (plan FREE) + base de datos en Supabase (Postgres gratis).
+# El frontend va en Vercel (ver DEPLOY.md). Sin disco ni cron (no disponibles en free):
+# el análisis diario se dispara a mano o con un cron externo que llame al backend.
 services:
   - type: web
     name: mundial-api
     runtime: docker
     dockerfilePath: ./Dockerfile
-    plan: starter
+    plan: free
     healthCheckPath: /health
-    disk:
-      name: data
-      mountPath: /app/data
-      sizeGB: 1
     envVars:
-      - key: DATABASE_URL
-        value: sqlite:////app/data/worldcup.db
+      - key: DATABASE_URL          # cadena de conexión de Supabase (Postgres)
+        sync: false
       - key: COOKIE_SECURE
         value: "true"
       - key: COOKIE_SAMESITE
         value: none
-      - key: FRONTEND_ORIGIN
-        sync: false   # https://<tu-app>.vercel.app
+      - key: FRONTEND_ORIGIN       # https://<tu-app>.vercel.app
+        sync: false
       - key: JWT_SECRET
         generateValue: true
-      - key: FOOTBALL_DATA_TOKEN
-        sync: false
-      - key: ODDS_API_KEY
-        sync: false
-      - key: VAPID_PUBLIC_KEY
-        sync: false
-      - key: VAPID_PRIVATE_KEY
-        sync: false
-      - key: VAPID_SUBJECT
-        sync: false
-
-  # Pasada diaria (refresco + análisis + liquidación + push). Requiere plan con cron.
-  - type: cron
-    name: mundial-daily
-    runtime: docker
-    dockerfilePath: ./Dockerfile
-    schedule: "0 8 * * *"
-    dockerCommand: python -m src.scheduler.daily_refresh
-    disk:
-      name: data
-      mountPath: /app/data
-      sizeGB: 1
-    envVars:
-      - key: DATABASE_URL
-        value: sqlite:////app/data/worldcup.db
       - key: FOOTBALL_DATA_TOKEN
         sync: false
       - key: ODDS_API_KEY

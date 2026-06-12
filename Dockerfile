@@ -9,6 +9,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY src ./src
 COPY SPEC.md CLAUDE.md ./
+# Modelo entrenado horneado en la imagen (el FS de Render free es efímero).
+COPY data/model_params.json ./data/model_params.json
 
 # Render/Railway inyectan $PORT. data/ se monta como disco persistente (SQLite + modelo).
 CMD ["sh", "-c", "uvicorn src.api.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

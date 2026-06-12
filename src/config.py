@@ -37,6 +37,18 @@ def _get_str(name: str, default: str) -> str:
     return raw if raw not in (None, "") else default
 
 
+def _normalize_db_url(url: str) -> str:
+    """SQLAlchemy exige 'postgresql://'; Supabase/Heroku a veces dan 'postgres://'.
+
+    Además fuerza el driver psycopg2 para evitar ambigüedades en producción.
+    """
+    if url.startswith("postgres://"):
+        url = "postgresql://" + url[len("postgres://"):]
+    if url.startswith("postgresql://"):
+        url = "postgresql+psycopg2://" + url[len("postgresql://"):]
+    return url
+
+
 def _get_bool(name: str, default: bool) -> bool:
     raw = os.getenv(name)
     if raw in (None, ""):
@@ -119,7 +131,7 @@ class Settings:
             min_stake_eur=_get_float("MIN_STAKE_EUR", 10.0),
             lock_minutes_before=_get_int("LOCK_MINUTES_BEFORE", 30),
             group_bankroll=_get_float("GROUP_BANKROLL", 350.0),
-            database_url=_get_str("DATABASE_URL", "sqlite:///data/worldcup.db"),
+            database_url=_normalize_db_url(_get_str("DATABASE_URL", "sqlite:///data/worldcup.db")),
             odds_region=_get_str("ODDS_REGION", "eu"),
             odds_api_base_url=_get_str("ODDS_API_BASE_URL", "https://api.the-odds-api.com/v4"),
             odds_sport=_get_str("ODDS_SPORT", "soccer_fifa_world_cup"),

@@ -31,5 +31,5 @@ env/
 .idea/
 .vscode/
 
-# Artefacto de modelo entrenado (generado por --train)
-data/model_params.json
+# El modelo entrenado SÍ se versiona (se hornea en la imagen para el deploy gratis).
+# (Regenerable con: python -m src.models.ensemble --train)

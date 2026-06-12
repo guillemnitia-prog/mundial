@@ -68,7 +68,9 @@ def test_expired_subscription_is_purged(db, monkeypatch):
 def test_no_vapid_is_noop(db, monkeypatch):
     u = _user(db)
     _sub(db, u.id)
-    # settings.vapid_private_key vacío por defecto → no-op.
+    # Forzar VAPID vacío (independiente del .env del entorno) → no-op.
+    repl = dataclasses.replace(settings, vapid_private_key="", vapid_public_key="")
+    monkeypatch.setattr("src.notifications.push.settings", repl)
     called = []
     monkeypatch.setattr("pywebpush.webpush", lambda **kw: called.append(kw))
     assert push.send_to_user(db, u.id, {"title": "x"}) == 0

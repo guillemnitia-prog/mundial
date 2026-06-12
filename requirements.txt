@@ -13,6 +13,7 @@ httpx
 
 # Base de datos
 sqlalchemy
+psycopg2-binary   # driver Postgres (producción: Supabase/Render). En local se usa SQLite.
 
 # Auth
 passlib[argon2]
