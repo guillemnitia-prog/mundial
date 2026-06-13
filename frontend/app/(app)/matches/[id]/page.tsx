@@ -25,17 +25,27 @@ export default function MatchDetailPage() {
   const router = useRouter();
   const [m, setM] = useState<MatchDetail | null>(null);
   const [balance, setBalance] = useState(0);
+  const [analyzing, setAnalyzing] = useState(false);
+
+  const load = () => api.get<MatchDetail>(`/matches/${id}`).then(setM).catch(() => {});
 
   useEffect(() => {
-    const load = () => api.get<MatchDetail>(`/matches/${id}`).then(setM).catch(() => {});
     load();
     api.get<Me>("/auth/me").then((me) => setBalance(me.balance)).catch(() => {});
-    // Si el partido está en vivo, refresca el marcador cada 20 s.
     const t = setInterval(() => {
       setM((cur) => { if (cur?.state === "en vivo") load(); return cur; });
     }, 20000);
     return () => clearInterval(t);
   }, [id]);
+
+  async function runAnalysis() {
+    setAnalyzing(true);
+    try {
+      await api.post(`/matches/${id}/analyze`);
+      await load();
+    } catch {}
+    finally { setAnalyzing(false); }
+  }
 
   // Bloqueo: en vivo/finalizado, o a menos de 30 min del inicio.
   const within30 = !!m?.utc_date && Date.now() > new Date(m.utc_date).getTime() - 30 * 60 * 1000;
@@ -134,9 +144,41 @@ export default function MatchDetailPage() {
             {m.picks.length > 0 ? `Apuestas de valor (${m.picks.length})` : "Análisis"}
           </div>
 
-          {m.message ? (
+          {m.state === "pendiente" && m.picks.length === 0 ? (
+            <div className="mx-4 mb-3 rounded-card border border-border bg-surface p-5 text-center">
+              <p className="mb-3 text-sm text-muted">Aún no hay análisis para este partido.</p>
+              <button
+                onClick={runAnalysis} disabled={analyzing}
+                className="inline-flex items-center gap-2 rounded-btn px-4 py-2.5 text-sm font-semibold disabled:opacity-60"
+                style={{ background: "var(--accent)", color: "#0A1712" }}>
+                {analyzing ? (
+                  <>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="animate-spin">
+                      <path d="M21 12a9 9 0 11-6.219-8.56" />
+                    </svg>
+                    Analizando…
+                  </>
+                ) : (
+                  <>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M3 12a9 9 0 1 0 9-9M3 3v6h6" />
+                    </svg>
+                    Ver análisis
+                  </>
+                )}
+              </button>
+              <p className="mt-3 text-[11px] text-[#737373]">Se generan automáticamente, pero puedes forzarlo aquí.</p>
+            </div>
+          ) : m.message ? (
             <div className="mx-4 mb-3 rounded-card border border-border bg-surface p-5 text-center text-sm text-muted">
               {m.message}
+              <div className="mt-3">
+                <button
+                  onClick={runAnalysis} disabled={analyzing}
+                  className="rounded-btn border border-border px-3 py-1.5 text-[12px] text-accent disabled:opacity-50">
+                  {analyzing ? "Analizando…" : "Reanalizar"}
+                </button>
+              </div>
             </div>
           ) : (
             m.picks.map((p) => (

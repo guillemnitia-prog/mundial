@@ -193,6 +193,30 @@ def list_matches(_user: User = Depends(require_onboarded), db: Session = Depends
     return out
 
 
+@router.post("/matches/{match_id}/analyze")
+def analyze_one(match_id: int, _user: User = Depends(require_onboarded), db: Session = Depends(get_db)) -> dict:
+    """Genera/regenera el análisis de un partido bajo demanda (botón 'Ver análisis')."""
+    m = db.get(Match, match_id)
+    if m is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="match_not_found")
+    # Refresca cuotas para este partido si tiene la key configurada.
+    try:
+        from src.config import settings as _s
+        from src.ingest.odds_api import OddsApiClient
+        if _s.odds_api_key:
+            OddsApiClient().ingest_odds(db)
+    except Exception:
+        pass
+    try:
+        from src.models.ensemble import EnsembleModel
+        from src.scheduler.analysis import analyze_match
+        ens = EnsembleModel.load()
+        picks = analyze_match(db, m, ens, stage="preliminary")
+        return {"analyzed": True, "picks": len(picks)}
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"analysis_failed: {exc}")
+
+
 @router.get("/matches/{match_id}", response_model=MatchDetail)
 def match_detail(match_id: int, current_user: User = Depends(require_onboarded),
                  db: Session = Depends(get_db)):

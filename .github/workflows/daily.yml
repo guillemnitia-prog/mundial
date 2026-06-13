@@ -1,11 +1,12 @@
 name: Refresco y análisis
 
-# Cada 5 min: refresca resultados en vivo, analiza los partidos del día, LIQUIDA y envía push.
-# (Además la liquidación es instantánea al abrir la app tras terminar un partido, ver api/views.)
-# GitHub free no garantiza intervalos < 5 min; 5 min es el mínimo fiable. Repo público → minutos ilimitados.
+# Cada 10 min: refresca resultados en vivo, analiza los partidos del día, LIQUIDA y envía push.
+# (Además: análisis bajo demanda con el botón 'Ver análisis' en cada partido + liquidación instantánea
+# al abrir la app, ver api/views.)
+# GitHub Actions free a veces se salta los crons más frecuentes; 10 min es el más fiable.
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "*/10 * * * *"
   workflow_dispatch:
 
 concurrency:
