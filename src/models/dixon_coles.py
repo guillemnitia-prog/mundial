@@ -155,9 +155,15 @@ class DixonColesModel:
                 ga = self.home_adv
             else:
                 gh = self.home_adv
-        lam = math.exp(self.mu + atk_h + def_a + gh)
-        mua = math.exp(self.mu + atk_a + def_h + ga)
+        boost = self.COMPETITION_GOAL_BOOST
+        lam = math.exp(self.mu + atk_h + def_a + gh + boost)
+        mua = math.exp(self.mu + atk_a + def_h + ga + boost)
         return lam, mua
+
+    # Ajuste de competición: el ajuste se entrena con todos los internacionales (incl. amistosos),
+    # donde se meten menos goles que en un Mundial. Subimos λ para reflejar el ritmo del torneo.
+    # +0.35 en log-λ ≈ +42% de goles (1.3 esperados → ~1.85, más cerca de la media real ~2.5-3).
+    COMPETITION_GOAL_BOOST = 0.35
 
     def score_matrix(self, home: str, away: str, neutral: bool = True,
                      host_side: str | None = None, max_goals: int = MAX_GOALS) -> np.ndarray:
@@ -177,7 +183,7 @@ class DixonColesModel:
         return mat / total if total > 0 else mat
 
     def predict_markets(self, home: str, away: str, neutral: bool = True,
-                        host_side: str | None = None, ou_lines=(2.5,),
+                        host_side: str | None = None, ou_lines=(1.5, 2.5, 3.5),
                         top_scores: int = 5) -> dict:
         """Deriva todos los mercados de la matriz de marcadores."""
         mat = self.score_matrix(home, away, neutral, host_side)
